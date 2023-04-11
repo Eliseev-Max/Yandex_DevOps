@@ -1,0 +1,85 @@
+Автоматизация сборки
+
+Примеры популярных сервисов по автоматизации сборки, тестирования и деплоя:
+	• Travis CI
+	• GitLab CI
+	• Drone CI
+	• TeamCity от Jetbrains
+	• Buildbot
+	• Bamboo
+	• Jenkins
+
+sudo sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ >/etc/apt/sources.list.d/jenkins.list'
+
+##################################################################################
+	‼ В идеальных условиях, чтобы добавить Credentials, вам понадобилось бы
+  ###########################################################################################
+  ## заранее создать ТЕХНИЧЕСКУЮ УЧЁТНУЮ ЗАПИСЬ для доступа из Jenkins в репозиторий Gitea ##
+  ###########################################################################################
+	‼ Использовать свою личную учётную запись — моветон. Но в учебных целях мы можем пойти на подобные уступки.
+
+Сборка проекта Maven:
+	# New item -> Maven Project
+	# Копируем URL репозитория в формате https://gitea.praktikum-services.ru/path/to/repo 
+	# Вставляем в Source Code Management --> Git --> Repositories --> Repository URL
+	# Выбираем ранее созданные credentials.
+	# В поле Root POM пишем путь к файлу pom.xml:
+		путь указываем относительно корня репозитория ($WORKSPACE) то есть backend/pom.xml.
+		pom.xml - файл, отвечающий за структуру проекта, зависимости, плагины и т.д, который нужен мавену, чтобы понимать как собрать наш бэкенд.
+	
+	Чтобы вы могли скачать артефакт сборки через интерфейс Jenkins, добавляем шаг после сборки:
+		Post-build Actions —> Archive the artifacts
+	
+	Собираемые с помощью Maven артефакты (в нашем случае это  jar-архив) кладутся относительно pom.xml в папку target,
+	поэтому указываем путь: backend/target/*.jar.
+	
+Исправление ошибок сборки:
+	Подсказка №1
+		По умолчанию при сборке приложения Maven Surefire Plugin запускает тесты. Обратите внимание на вывод ошибок сборки.
+	
+	Подсказка №2
+		Нужный тест находится в файле ../backend/src/test/java/com/yandex/practicum/devops/SausageApplicationIntegrationTest.java
+	
+	Подсказка №3
+		Сравните список продуктов, проверяемых в тесте, со списком продуктов в приложении ..backend/src/main/java/com/yandex/practicum/devops/SausageApplication.java и отредактируйте файл теста.
+---
+Listing:
+
+[INFO] --- resources:3.2.0:testResources (default-testResources) @ sausage-store ---
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[INFO] Using 'UTF-8' encoding to copy filtered properties files.
+[INFO] skip non existing resourceDirectory /var/lib/jenkins/workspace/build_project/backend/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.8.1:testCompile (default-testCompile) @ sausage-store ---
+[INFO] Changes detected - recompiling the module!
+[INFO] Compiling 1 source file to /var/lib/jenkins/workspace/build_project/backend/target/test-classes
+...
+[WARNING] Parameter 'localRepository' is deprecated core expression; Avoid use of ArtifactRepository type. If you need access to local repository, switch to '${repositorySystemSession}' expression and get LRM from it instead.
+(
+	Параметр 'localRepository' является устаревшим выражением ядра; Избегайте использования типа ArtifactRepository.
+	Если вам нужен доступ к локальному хранилищу, переключитесь на выражение '${repositorySystemSession}' и получайте LRM из него.
+)
+
+11:56:02.678 [main] INFO  o.s.t.c.s.AbstractContextLoader - Could not detect default resource locations for test class [com.yandex.practicum.devops.SausageApplicationIntegrationTest]: no resource found for suffixes {-context.xml, Context.groovy}.
+
+[ERROR] Tests run: 4, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 10.652 s <<< FAILURE! - in com.yandex.practicum.devops.SausageApplicationIntegrationTest
+[ERROR] givenGetProductsApiCall_whenProductListRetrieved_thenSizeMatchAndListContainsProductNames  Time elapsed: 1.476 s  <<< FAILURE!
+java.lang.AssertionError: 
+
+Expected: a collection containing hasProperty("name", is "Русская")
+     but: mismatches were: [ property 'name' was "Сливочная",  property 'name' was "Особая",  property 'name' was "Молочная",  property 'name' was "Нюренбергская",  property 'name' was "Мюнхенская",  property 'name' was "Еврейская"]
+	at com.yandex.practicum.devops.SausageApplicationIntegrationTest.givenGetProductsApiCall_whenProductListRetrieved_thenSizeMatchAndListContainsProductNames(SausageApplicationIntegrationTest.java:64)
+	
+[ERROR] Failures: 
+[ERROR]   SausageApplicationIntegrationTest.givenGetProductsApiCall_whenProductListRetrieved_thenSizeMatchAndListContainsProductNames:64 
+Expected: a collection containing hasProperty("name", is "Русская")
+     but: mismatches were: [ property 'name' was "Сливочная",  property 'name' was "Особая",  property 'name' was "Молочная",  property 'name' was "Нюренбергская",  property 'name' was "Мюнхенская",  property 'name' was "Еврейская"]
+[INFO] 
+[ERROR] Tests run: 4, Failures: 1, Errors: 0, Skipped: 0
+[INFO] 
+[ERROR] There are test failures.
+
+---
+Книги:
+  ♦ Continuous delivery. Практика непрерывных апдейтов. Эберхард Вольф
+  ♦ Непрерывное развёртывание ПО. Автоматизация процессов сборки, тестирования и внедрения новых версий программ. Джез Хамбл
