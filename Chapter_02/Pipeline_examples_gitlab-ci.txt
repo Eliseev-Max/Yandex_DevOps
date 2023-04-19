@@ -1,0 +1,117 @@
+#####################################
+# Пример пайплайна в .gitlab-ci.yml #
+#####################################
+
+
+stages:
+  - build
+
+build-code-job:  # задача с именем build-code-job
+  stage: build   # этап build
+  only: # запуск этого шага только при изменениях в директориях backend и frontend
+    changes:
+    - backend/*
+    - frontend/*
+  script:        # объявление скрипта
+    - cd backend
+    - mvn package  # запуск сборки кода
+    - cd ../frontend
+    - npm install # загрузка всех сторонних зависимостей
+    - npm run build # запуск сборки кода
+    - cd ..
+    - mkdir sausage-store-0.0.1  # создание директории, в которую копируются артефакты. Это нужно для организации удобной структуры архива
+    - cp backend/target/sausage-store-0.0.1-SNAPSHOT.jar sausage-store-0.0.1/sausage-store-0.0.1.jar # копирование собранного бэкенда
+    - cp -r frontend/dist/frontend sausage-store-0.0.1/public_html # копирование собранного фронтенда
+  artifacts: # блок, отвечающий за сохранение файлов как артефактов в Gitlab
+    paths:
+      - sausage-store-0.0.1/public_html  # сохранение собранного фронтенда как артефакта
+      - sausage-store-0.0.1/sausage-store-0.0.1.jar # сохранение собранного бэкенда как артефакта
+
+
+// RegEx в обозначениях папок/веток/и т.д. приветствуется
+####
+####
+####
+
+build-code-job:
+  stage: build
+  only:
+      - master
+      - tags
+    changes:
+      - backend/*
+      - frontend/*
+  except:
+    refs:
+      - schedules
+      - triggers
+    variables:
+      - $CI_COMMIT_MESSAGE =~ /skip tests/   
+
+####
+#
+####
+
+script: cd backend && mvn package
+rules:
+  - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =~ /^hotfix/ && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^dev/
+    when: never
+
+
+
+######################################################################
+# Пайплайн с разделёнными по разным джобам билды фронтенда и бэкенда #
+######################################################################
+
+stages:
+  - build
+
+build-backend-code-job:
+  stage: build  
+  only:
+    changes:
+    - backend/*
+  script:
+    - cd backend
+    - mvn package
+  artifacts:
+    paths:
+      - backend/target/sausage-store-0.0.1-SNAPSHOT.jar
+
+build-frontend-code-job:
+  stage: build  
+  only:
+    changes:
+    - frontend/*
+  script:        
+    - cd frontend
+    - npm install
+    - npm run build
+  artifacts:
+    paths:
+      - frontend/dist/frontend
+
+
+####
+# Telegram notifier
+####
+
+telegram-notification-backend:
+  stage: notify
+  only:
+    changes:
+    - backend/*
+  script:
+    - curl <отправка вашего сообщения>
+  needs:
+    - build-backend-code-job
+
+telegram-notification-frontend:
+  stage: notify
+  only:
+    changes:
+    - frontend/*
+  script:
+    - curl <отправка вашего сообщения>
+  needs:
+    - build-frontend-code-job
