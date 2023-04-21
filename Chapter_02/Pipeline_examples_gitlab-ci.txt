@@ -8,8 +8,8 @@ stages:
 
 build-code-job: 	 # задача с именем build-code-job
   stage: build   	# этап build
-  only: 		 	# запуск этого шага только при изменениях в директориях backend и frontend
-    changes:
+  only: 		 	# запуск этого шага только при ...
+    changes:		# ...изменениях в директориях backend и frontend
     - backend/*
     - frontend/*
   script:        	# объявление скрипта
@@ -23,7 +23,7 @@ build-code-job: 	 # задача с именем build-code-job
     - cp backend/target/sausage-store-0.0.1-SNAPSHOT.jar sausage-store-0.0.1/sausage-store-0.0.1.jar # копирование собранного бэкенда
     - cp -r frontend/dist/frontend sausage-store-0.0.1/public_html # копирование собранного фронтенда
   artifacts: # блок, отвечающий за сохранение файлов как артефактов в Gitlab
-    paths:
+    paths:												# ключевое слово "paths" определяет, какие файлы добавить к артефактам джобы
       - sausage-store-0.0.1/public_html  				# сохранение собранного фронтенда как артефакта
       - sausage-store-0.0.1/sausage-store-0.0.1.jar 	# сохранение собранного бэкенда как артефакта
 
@@ -44,9 +44,19 @@ build-code-job:
   except:				# блок пропуска запуска задач при соответствии условиям
     refs:
       - schedules		# пропустить, если задача вызвана по расписанию, через вызов API
-      - triggers		# пропустить, если коммит содержит текст «skip tests»
+      - triggers		# пропустить, если коммит содержит текст, содержащийся в переменной $CI_COMMIT_MESSAGE
     variables:
-      - $CI_COMMIT_MESSAGE =~ /skip tests/
+      - $CI_COMMIT_MESSAGE =~ /skip tests/		# Текст внутри коммита: «skip tests»
+	
+	# Переменная $CI_COMMIT_MESSAGE содержит текст в коммите;
+	# В сочетании с ↓
+	except:
+		refs:
+		  - triggers
+		variables:
+		  - $CI_COMMIT_MESSAGE =~ /текст, который отслеживаем в коммите/
+	
+	# получаем пропуск запуска, если в коммите содержится "skip test"
 
 # Для деплоя проекта на прод в ручном режиме (по нажатию кнопки) используется параметр
 	when: manual
@@ -127,6 +137,8 @@ build-frontend-code-job:
 # Telegram notifier #
 #####################
 
+# по сути, это веб-хук (Webhook)
+
 telegram-notification-backend:
   stage: notify
   only:
@@ -146,3 +158,5 @@ telegram-notification-frontend:
     - curl <отправка вашего сообщения>
   needs:
     - build-frontend-code-job
+
+‼ Уведомление == Webhook

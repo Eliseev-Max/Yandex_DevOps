@@ -198,3 +198,23 @@ Usefull materials:
 	{https://www.jetbrains.com/ru-ru/space/}
     CI от GitLab — документация.
 	{https://docs.gitlab.com/ee/ci/}
+
+########################################
+# My personal access token to the API: #
+# ys7YsGLf3ftzBzNGvJ4z				   #
+########################################
+# Feed token:          #
+# X7SHA7rZUg3hXGsS7ugJ #
+########################
+Project access token (name=sausage-store-project):
+_DuiY3FehRDrjeB1xgxP
+
+Как получить ссылку на артефакты, сгенерированные в процессе успешной сборки в Gitlab:
+
+https://gitlab.com/%{namespace}/%{project_name}/-/jobs/artifacts/%{ref}/file/%{path}?job=%{job_name}
+
+Мой_случай:
+https://gitlab.praktikum-services.ru/std-017-033/sausage-store/-/jobs/$CI_JOB_TOKEN/artifacts/download?file_type=archive
+
+Пример:
+https://gitlab.com/jorgecarleitao/schemaflow/-/jobs/artifacts/master/file/htmlcov/index.html?job=coverage
