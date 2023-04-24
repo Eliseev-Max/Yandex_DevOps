@@ -218,3 +218,5 @@ https://gitlab.praktikum-services.ru/std-017-033/sausage-store/-/jobs/$CI_JOB_TO
 
 Пример:
 https://gitlab.com/jorgecarleitao/schemaflow/-/jobs/artifacts/master/file/htmlcov/index.html?job=coverage
+
+https://gitlab.praktikum-services.ru/std-017-033/sausage-store/-/jobs/artifacts/release-0.0.1/download?file_type=archive
