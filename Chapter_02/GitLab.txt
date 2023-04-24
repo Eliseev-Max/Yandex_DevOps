@@ -207,6 +207,7 @@ Usefull materials:
 # X7SHA7rZUg3hXGsS7ugJ #
 ########################
 Project access token (name=sausage-store-project):
+$PROJECT_TOKEN
 _DuiY3FehRDrjeB1xgxP
 
 Как получить ссылку на артефакты, сгенерированные в процессе успешной сборки в Gitlab:
