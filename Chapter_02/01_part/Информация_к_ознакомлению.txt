@@ -13,3 +13,33 @@ https://docs.gitlab.com/ee/ci/yaml/artifacts_reports.html#artifactsreportsdotenv
 
 5. GitLab CI/CD job token:
 https://docs.gitlab.com/ee/ci/jobs/ci_job_token.html
+
+---
+---
+
+История создания Agile-манифеста
+	https://vc.ru/u/439760-dmitriy-blinov/207822-istoriya-sozdaniya-agile-manifesta
+	
+Мастер-класс Бориса Вольфсона. Основы Agile
+	https://habr.com/ru/companies/vk/articles/272237/
+	
+Открытый Jenkins — посмотрите, как собирают проекты другие команды
+	https://ci.xwiki.org/
+	
+Аналог GitLab — инструмент полного жизненного цикла разработки ПО
+	https://www.jetbrains.com/ru-ru/space/
+	
+CI от GitLab — документация
+	https://docs.gitlab.com/ee/ci/
+
+Сравнение GitLab и SonarQube
+	https://about.staging.gitlab.com/devops-tools/sonarqube-vs-gitlab.html
+
+SAST от GitLab
+	https://docs.gitlab.com/ee/user/application_security/sast/
+
+Настройка анализа проекта в SonarQube для Maven
+	https://docs.sonarqube.org/latest/devops-platform-integration/gitlab-integration/
+
+Открытый сонар. Можно бесплатно использовать для опенсорс-продуктов или посмотреть, как выглядят отчёты на примере других команд
+	https://sonarcloud.io/explore/projects
