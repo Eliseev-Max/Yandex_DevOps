@@ -215,16 +215,7 @@ Usefull materials:
     CI от GitLab — документация.
 	{https://docs.gitlab.com/ee/ci/}
 
-########################################
-# My personal access token to the API: #
-# ys7YsGLf3ftzBzNGvJ4z				   #
-########################################
-# Feed token:          #
-# X7SHA7rZUg3hXGsS7ugJ #
-########################
-Project access token (name=sausage-store-project):
-$PROJECT_TOKEN
-_DuiY3FehRDrjeB1xgxP
+
 
 Как получить ссылку на артефакты, сгенерированные в процессе успешной сборки в Gitlab:
 
