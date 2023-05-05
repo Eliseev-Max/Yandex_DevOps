@@ -1,0 +1,66 @@
+Описание и инструкция по использованию lvcreate
+{source: https://manpages.ubuntu.com/manpages/jammy/man8/lvcreate.8.html}
+{more: https://linux.die.net/man/8/lvcreate}
+
+
+lvcreate  - создаёт логические тома.
+
+Синтаксис команды в общем виде:
+  $ lvcreate option_args position_args
+           [ option_args ]
+           [ position_args ]
+		   
+lvcreate создает новый LV (Logical Volume) в VG (Virtual Group).
+Для стандартных LV это требует выделения логических экстентов (объёмов) из свободных физических экстентов VG.
+{
+  <*> Экстент (англ. extent — «протяжённость») — в файловых системах — непрерывная область носителя информации.
+      Как правило, в файловых системах с поддержкой экстентов большие файлы состоят из нескольких экстентов, 
+	  не являющихся смежными на носителе информации.
+} 
+Если свободного места недостаточно, VG можно расширить за счет других PV (Physical Volume)
+ * (vgextend(8)),
+или уменьшить/удалить существующие LV 
+ * (lvremove(8), lvreduce(8)).
+
+Чтобы контролировать, какие PVs будет использовать новый LV, укажите один или несколько PVs в качестве позиционных аргументов в конце командной строки.
+lvcreate будет выделять физические экстенты только из указанных PVs.
+
+lvcreate также может создавать моментальные снимки существующих LV, например, для резервного копирования.
+Данные в новом снимке LV представляют собой содержимое оригинального LV с момента создания снимка.
+
+LV с RAID-массивами можно создавать, указывая тип LV при создании LV
+ * (см. lvmraid(7)).
+Для разных уровней RAID требуется разное количество уникальных PV, доступных в VG для выделения.
+
+Тонкие пулы (для тонкого выделения) и пулы кэша (для кэширования) представлены специальными LV с типами thin-pool и cache-pool (см. lvmthin(7) и lvmcache(7)). Пул
+LV не могут использоваться как стандартные блочные устройства, но имена LV служат ссылками на пулы.
+
+Тонкие LV создаются из тонкого пула и имеют виртуальный, а не физический размер. LV с кэшем - это комбинация стандартного LV с пулом кэша.
+пулом, используемым для кэширования активных частей LV для повышения производительности.
+
+
+Примечания по использованию
+В разделе использования ниже, --size Размер может быть заменен на --extents Число. См. описание в разделе опций.
+
+В приведенном ниже разделе использования параметр --name опущен в списке требуемых опций, хотя обычно он используется. Если имя не указано, генерируется новое имя LV с префиксом "lvol" и уникальным числовым суффиксом.
+
+
+--type linear|striped|snapshot|mirror|raid|thin|cache|vdo|thin-pool|cache-pool|vdo-pool
+  Тип LV, также известный как "тип сегмента" или "segtype".
+  Конкретные способы использования этих типов см. в описаниях использования.
+  Для получения дополнительной информации о резервировании и производительности (raid<N>, mirror, striped, linear) смотрите lvmraid(7).
+  Для тонкой инициализации (thin, thin-pool) смотрите lvmthin(7).
+  Для кэширования производительности (cache, cache-pool) смотрите lvmcache(7).
+  О моментальных снимках с копированием на запись (snapshot) см. в определениях использования.
+  Для VDO (vdo) смотрите lvmvdo(7).  Некоторые команды опускают явную опцию типа, потому что тип выводится из других опций или сокращений (например, --stripes, --mirrors, --snapshot, --virtualsize, --thin, --cache, --vdo).
+  Используйте инферентные типы (inferred) с осторожностью, так как это может привести к неожиданным результатам.
+
+-l|--extents Number[PERCENT] - 
+Specifies the size of the new LV in logical extents. 
+The --size and --extents options are alternate methods of specifying size.
+The total number of physical extents used will be greater when redundant data is needed for RAID levels.
+An alternate syntax allows the size to be determined indirectly as a percentage of the size of a related VG, LV, or set of PVs.
+The suffix %VG denotes the total size of the VG, the suffix %FREE the remaining free space in the VG, and the suffix %PVS the free space in the specified PVs.
+For a snapshot, the size can be expressed as a percentage of the total size of the origin LV with the suffix %ORIGIN (100%ORIGIN provides space for the whole origin).
+When expressed as a percentage, the size defines an upper limit for the number of logical extents in the new LV.
+The precise number of logical extents in the new LV is not determined until the command has completed.

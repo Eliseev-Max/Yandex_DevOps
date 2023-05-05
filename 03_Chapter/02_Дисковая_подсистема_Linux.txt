@@ -37,4 +37,242 @@ vdb				#### новый диск, не размечен
 
 Типы таблиц разметки разделов:
   • MBR (Master Boot Record)  - для устройств с BIOS
+    - традиционная структура разметки дисков;
+	- содердит 2 типа разделов:
+	  ○ primary (Primary partition, первичный раздел)
+	    -- их может быть всего 4
+	  ○ extended (Extended partition, расширенный раздел)
+	    -- можно разбить на любое количество логических дисков
+		
   • GPT (GUID Partition Table)  - для устройств с UEFI
+    - новый стандарт разметки, часть стандарта UEFI
+	- допускает неограниченное количество разделов
+	- но есть ограничения со стороны ОС (Windows позволяет создать <= 128 разделов)
+	- хранит копию данных раздела (позволяя восстановить их в случае повреждения основного заголовка GPT)
+	- также хранит значения контрольной суммы для проверки, что данные не повреждены
+
+Утилита fdisk
+  - позволяет вывести информацию о дисках (выводит куда больше информации, чем lsblk)
+
+Пример работы утилиты fdisk:
+
+$ sudo fdisk -l
+Disk /dev/vda: 10 GiB, 10737418240 bytes, 20971520 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 4096 bytes
+I/O size (minimum/optimal): 4096 bytes / 4096 bytes
+Disklabel type: gpt
+Disk identifier: 8E70400A-DD3F-443D-95C1-844A5A72302B
+Device     Start      End  Sectors Size Type
+/dev/vda1   2048     4095     2048   1M BIOS boot
+/dev/vda2   4096 20971486 20967391  10G Linux filesystem
+Disk /dev/vdb: 4 GiB, 4294967296 bytes, 8388608 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 4096 bytes
+I/O size (minimum/optimal): 4096 bytes / 4096 bytes
+
+
+Разметка нового диска с помощью fdisk:
+  $ sudo fdisk /dev/vdb
+<output>
+Welcome to fdisk (util-linux 2.34).
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
+
+Device does not contain a recognized partition table.
+Created a new DOS disklabel with disk identifier 0x30cf485a.
+
+Command (m for help): 
+
+  # создадим таблицу GPT (клавиша g):
+<output>
+Created a new GPT disklabel (GUID: E83C9D88-AB63-3341-AB6F-2E7FAC0FC15D).
+
+  # Создадим пару разделов размером 1 ГБ, а ещё 2 ГБ оставим неразмеченными:
+  
+Command (m for help): n
+Partition number (1-128, default 1):
+First sector (2048-8388574, default 2048):
+Last sector, +/-sectors or +/-size{K,M,G,T,P} (2048-8388574, default 8388574): +1G
+
+Created a new partition 1 of type 'Linux filesystem' and of size 1 GiB.
+
+Command (m for help): n       
+Partition number (2-128, default 2):
+First sector (2099200-8388574, default 2099200):
+Last sector, +/-sectors or +/-size{K,M,G,T,P} (2099200-8388574, default 8388574): +1G
+
+Created a new partition 2 of type 'Linux filesystem' and of size 1 GiB.
+
+Command (m for help): w
+The partition table has been altered.
+Calling ioctl() to re-read partition table.
+Syncing disks.
+
+  # Теперь необходимо перезагрузить машину, чтобы таблица разделов тоже перезагрузилась.
+  # Но мы воспользуемся утилитой partprobe, она перегружает таблицу без рестарта.
+
+$ sudo partprobe
+$ lsblk
+NAME   MAJ:MIN RM SIZE RO TYPE MOUNTPOINT
+vda    252:0    0  10G  0 disk
+├─vda1 252:1    0   1M  0 part
+└─vda2 252:2    0  10G  0 part /
+vdb    252:16   0   4G  0 disk
+├─vdb1 252:17   0   1G  0 part
+└─vdb2 252:18   0   1G  0 part
+
+  # У нас 2 диска по 1 ГБ.
+  # Теперь можно создать файловую систему и примонтировать их
+
+
+Что делать, если на одном из дисков закончилось место, и нужно расширить примонтированный диск с данными?
+
+  Используем lvm
+  
+  lvm (Logical Volume Manager)
+  - это система управления логическими дисками на одном или нескольких физических дисках без переразметки физических дисков.
+  LVM позволяет изменять размеры дисков, перемещать их без остановки процессов или размонтирования файловых систем.
+  То есть lvm даёт возможность добавить ещё диск или расширить существующие lvm разделы на лету.
+
+Преимущества использования логических дисков под управлением lvm перед разделами физического диска:
+
+  • Изменение размера: можно расширить или уменьшить раздел lvm без форматирования логических дисков.
+  • Расширяемость пространства: lvm позволяет увеличить доступное пространство, добавляя новые физические диски в пул lvm.
+  • Зеркалирование данных: lvm позволяет вести запись на несколько дисков одновременно,
+    благодаря чему 
+	→ повышается производительность работы системы 
+	→ появляется возможность дублировать данные на несколько логических дисков.
+	
+  • Резервное копирование: lvm позволяет «заморозить» логический диск во время работы системы и сделать копию.
+  • Читаемые имена: логическим разделам можно давать любые понятные имена, → легче понимать предназначение раздела.
+
+
+LVM управляет тремя сущностями:
+  • Физический раздел (может включать в себя несколько физических дисков) — Physical Volume (PV)
+  • Группа физических дисков — Volume Group (VG)
+  • Логический диск — Logical Volume (LV)
+
+## Создадим PV для обоих разделов на новом диске:
+$ sudo pvcreate /dev/vdb1 /dev/vdb2
+  Physical volume "/dev/vdb1" successfully created.
+  Physical volume "/dev/vdb2" successfully created.
+
+$ sudo pvs								# вывести краткую информацию о доступных физических дисках lvm
+  PV         VG Fmt  Attr PSize PFree
+  /dev/vdb1     lvm2 ---  1.00g 1.00g
+  /dev/vdb2     lvm2 ---  1.00g 1.00g
+
+$ sudo pvdisplay						# вывести подробную информацию об этих дисках.
+  "/dev/vdb1" is a new physical volume of "1.00 GiB"
+  --- NEW Physical volume ---
+  PV Name               /dev/vdb1
+  VG Name               
+  PV Size               1.00 GiB
+  Allocatable           NO
+  PE Size               0   
+  Total PE              0
+  Free PE               0
+  Allocated PE          0
+  PV UUID               w68zDA-hwuX-1bqD-sMir-cAvx-Q1ji-hMwfVz
+
+  "/dev/vdb2" is a new physical volume of "1.00 GiB"
+  --- NEW Physical volume ---
+  PV Name               /dev/vdb2
+  VG Name               
+  PV Size               1.00 GiB
+  Allocatable           NO
+  PE Size               0   
+  Total PE              0
+  Free PE               0
+  Allocated PE          0
+  PV UUID               Es91ky-P1bv-PbfW-2CnW-AAga-eu0i-Hz2mGe
+
+## Создадим виртуальную группу разделов lvm (VG):
+
+$ sudo vgcreate my_vg /dev/vdb1 /dev/vdb2
+  Volume group "my_vg" successfully created
+
+$ sudo vgs								# вывести краткую информацию о доступных группах логических дисков.
+  VG    #PV #LV #SN Attr   VSize VFree
+  my_vg   2   0   0 wz--n- 1.99g 1.99g
+$ sudo vgdisplay						# вывести подробную информацию о группах
+  --- Volume group ---
+  VG Name               my_vg
+  System ID             
+  Format                lvm2
+  Metadata Areas        2
+  Metadata Sequence No  1
+  VG Access             read/write
+  VG Status             resizable
+  MAX LV                0
+  Cur LV                0
+  Open LV               0
+  Max PV                0
+  Cur PV                2
+  Act PV                2
+  VG Size               1.99 GiB
+  PE Size               4.00 MiB
+  Total PE              510
+  Alloc PE / Size       0 / 0   
+  Free  PE / Size       510 / 1.99 GiB
+  VG UUID               0ESNYO-msz2-PS70-GN13-cwnr-xf5b-0jxdsf
+
+    ► VG Name — имя группы
+    ► VG Size — размер группы
+    ► PE Size — это размер чанка.
+	  (Чанк — это кусочек дискового пространства, в которые производится запись данных и из которых состоит lvm диск.
+	  Это блок, если проводить аналогию с файловой системой, или кластер, если проводить аналогию с файловыми системами Windows)
+	  
+    ► Total PE — количество чанков в группе
+    ► Alloc PE / Size — занятое место
+    ► Free PE / Size — свободное место
+
+
+## Создадим логический раздел (виртуальный раздел) используя группу my_vg:
+
+$ sudo lvcreate -l +100%FREE -n my_vol my_vg
+  Logical volume "my_vol" created.
+
+$ sudo lvs
+  LV     VG    Attr       LSize Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  my_vol my_vg -wi-a----- 1.99g          
+
+$ sudo lvdisplay
+  --- Logical volume ---
+  LV Path                /dev/my_vg/my_vol
+  LV Name                my_vol
+  VG Name                my_vg
+  LV UUID                7l8Dgk-z4NY-RRzC-Gyb5-8luy-kVOZ-4s6iyL
+  LV Write Access        read/write
+  LV Creation host, time fhmo1o2bgbo5cmvtr29m, 2021-09-25 19:45:04 +0000
+  LV Status              available
+  # open                 0
+  LV Size                1.99 GiB
+  Current LE             510
+  Segments               2
+  Allocation             inherit
+  Read ahead sectors     auto
+  - currently set to     256
+  Block device           253:0
+
+  -l указать относительное свободное место 
+  -L — указать конкретный размер нового LV.
+# Опции --size и --extents являются альтернативными методами указания размера.
+# Общее количество используемых физических экстентов будет больше, если для уровней RAID требуется избыточность данных.
+
+Выберите команду, которая
+  - создаст логический раздел с именем sales_data,
+  - типом linear,
+  - размером 50% от свободного места 
+  - в виртуальной группе dataVG объёмом 4 ГБ
+
+  $ lvcreate -n sales_data --type=linear -l 50%FREE dataVG
+    -n|--name <string>  = задает имя нового LV. 
+						Если имя не указано, по умолчанию генерируется имя "lvol#",
+						где # - номер, генерируемый LVM.
+	--type linear|striped|snapshot|mirror|raid|thin|cache|vdo|thin-pool|cache-pool|vdo-pool   = 
+		  = тип LV, также известный как "тип сегмента"(segment type) или "segtype".
+		  Конкретные способы использования этих типов см. в описаниях использования.
+		  
+	-l|--extents <Number[PERCENT]>  = 
