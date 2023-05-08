@@ -38,10 +38,10 @@ vdb				#### новый диск, не размечен
 Типы таблиц разметки разделов:
   • MBR (Master Boot Record)  - для устройств с BIOS
     - традиционная структура разметки дисков;
-	- содердит 2 типа разделов:
-	  ○ primary (Primary partition, первичный раздел)
+    - содердит 2 типа разделов:
+    ○ primary (Primary partition, первичный раздел)
 	    -- их может быть всего 4
-	  ○ extended (Extended partition, расширенный раздел)
+    ○ extended (Extended partition, расширенный раздел)
 	    -- можно разбить на любое количество логических дисков
 		
   • GPT (GUID Partition Table)  - для устройств с UEFI
@@ -74,7 +74,7 @@ I/O size (minimum/optimal): 4096 bytes / 4096 bytes
 
 Разметка нового диска с помощью fdisk:
   $ sudo fdisk /dev/vdb
-<output>
+:>
 Welcome to fdisk (util-linux 2.34).
 Changes will remain in memory only, until you decide to write them.
 Be careful before using the write command.
@@ -85,7 +85,7 @@ Created a new DOS disklabel with disk identifier 0x30cf485a.
 Command (m for help): 
 
   # создадим таблицу GPT (клавиша g):
-<output>
+:>
 Created a new GPT disklabel (GUID: E83C9D88-AB63-3341-AB6F-2E7FAC0FC15D).
 
   # Создадим пару разделов размером 1 ГБ, а ещё 2 ГБ оставим неразмеченными:
