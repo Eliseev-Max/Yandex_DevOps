@@ -242,13 +242,13 @@ $ sudo vgdisplay						# вывести подробную информацию �
 $ sudo lvcreate -l +100%FREE -n my_vol my_vg
   Logical volume "my_vol" created.
 
-$ sudo lvs
+$ sudo lvs                # сообщить информацию о логических томах
   LV     VG    Attr       LSize Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
   my_vol my_vg -wi-a----- 1.99g          
 
 $ sudo lvdisplay
   --- Logical volume ---
-  LV Path                /dev/my_vg/my_vol
+  LV Path                /dev/my_vg/my_vol            # Расположение нового логического раздела
   LV Name                my_vol
   VG Name                my_vg
   LV UUID                7l8Dgk-z4NY-RRzC-Gyb5-8luy-kVOZ-4s6iyL
@@ -283,7 +283,7 @@ $ sudo lvdisplay
 		  = тип LV, также известный как "тип сегмента"(segment type) или "segtype".
 		  Конкретные способы использования этих типов см. в описаниях использования.
 		  
-	-l|--extents <Number[PERCENT]>  = 
+	-l|--extents <Number[PERCENT]>  = Указывает размер нового LV в логических экстентах.
 
 
 Типы файловых систем
@@ -303,6 +303,7 @@ $ sudo lvdisplay
 
   ntfs, fat32
     Файловые системы Windows, которые поддерживаются в Linux.
+
 
 Все файловые системы создаются утилитой mkfs.<FS_NAME>
   (**mkfs.ext4**, **mkfs.xfs**, ..). 
@@ -341,21 +342,22 @@ Writing superblocks and filesystem accounting information: done
 /etc/fstab
   Команда mount монтирует диск только в рантайме.
   Чтобы диск примонтировался в директорию после перезагрузки хоста, необходимо прописать его в файл /etc/fstab.
-  Сейчас он выглядит так:
+  Сейчас содержимое файла /etc/fstab выглядит так:
 
-# /etc/fstab: static file system information.
-#
-# Use 'blkid' to print the universally unique identifier for a
-# device; this may be used with UUID= as a more robust way to name devices
-# that works even if disks are added and removed. See fstab(5).
-#
-# <file system> <mount point>   <type>  <options>       <dump>  <pass>
-# / was on /dev/vda2 during installation
-UUID=82afb880-9c95-44d6-8df9-84129f3f2cd1 /               ext4    errors=remount-ro 0       1
-/dev/vdc /var/jarservice xfs defaults 0 0 
+  # /etc/fstab: static file system information.
+  #
+  # Use 'blkid' to print the universally unique identifier for a
+  # device; this may be used with UUID= as a more robust way to name devices
+  # that works even if disks are added and removed. See fstab(5).
+  #
+  # <file system> <mount point>   <type>  <options>       <dump>  <pass>
+  # / was on /dev/vda2 during installation
+  UUID=82afb880-9c95-44d6-8df9-84129f3f2cd1 /               ext4    errors=remount-ro 0       1
+  /dev/vdc /var/jarservice xfs defaults 0 0 
 
+---
 
-После рестарта монтируется только корневая директория и /var/jarservice
+После рестарта монтируется только корневая директория и /var/jarservice (указанная в файле fstab)
 
   - Добавим строку:
     /dev/mapper/my_vg-my_vol                  /mnt            ext4    defaults 1 2
@@ -367,6 +369,9 @@ UUID=82afb880-9c95-44d6-8df9-84129f3f2cd1 /               ext4    errors=remount
 Но в реальности это 2 раздела, которые могли бы быть на разных дисках.
 
 Теперь запишем в директорию произвольные данные:
+  # dd - утилита UNIX, производящая копирование файла, преобразование и форматирование в соответствии с операндами.
+  # С помощью dd можно выполнить копирование данных из одного места в другое на двоичном уровне.
+  # Она может скопировать CD/DVD диск, раздел на диске или даже целый жесткий диск.
 
 $ sudo dd if=/dev/zero of=/mnt/payload bs=1M count=2048
 dd: error writing '/mnt/payload': No space left on device
@@ -376,4 +381,140 @@ dd: error writing '/mnt/payload': No space left on device
 
 $ sudo df -h
 /dev/mapper/my_vg-my_vol         2.0G  2.0G     0 100% /mnt
+
+#### ! Ошибка записи
+## пытались записать ровно 2 ГБ,
+## но lvm забирает под свою мета-информацию некоторое количество диска,
+## поэтому, объединив 2 диска по 1 ГБ, мы получили диск немного меньших размеров
+
+## Как добавить в систему 2 разных диска, не используя LVM ##
+# 1. Создать на каждом диске файловую систему командой mkfs.<fs_type>
+# 2. Примонтировать каждый диск в отдельную директорию (например, /mnt/1, /mnt/2)
+# !!! диски нужно прописывать в /etc/fstab по UUID, а не по названию раздела, как в LVM
+#### Как обращаться к таким директориям? ####
+# Для этого существуют специальные файловые системы #
+
+Если место на логическом диске закончилось, нужно:
+  1. добавить ещё один диск в lvm группу
+  2. расширить существующий логический диск
+
+
+Расширение раздела lvm
+  Добавим ещё один раздел на физическом носителе таким образом, чтобы он занял всё оставшееся место на диске.
+  1) Добавим в виртуальную группу my_vg:
+
+  $ sudo vgextend my_vg /dev/vdb3
+    Volume group "my_vg" successfully extended
+
+  $ sudo vgs
+    VG    #PV #LV #SN Attr   VSize  VFree
+    my_vg   3   1   0 wz--n- <3.99g <2.00g
+
+  2) Теперь увеличим наш логический диск lvm:
+      $ sudo lvextend -l +100%FREE my_vg/my_vol
+      Size of logical volume my_vg/my_vol changed from 1.99 GiB (510 extents) to <3.99 GiB (1021 extents).
+      Logical volume my_vg/my_vol successfully resized.
+  # Посмотрим, что получилось:
+
+  $ sudo lsblk
+NAME             MAJ:MIN RM SIZE RO TYPE MOUNTPOINT
+vda              252:0    0  10G  0 disk
+├─vda1           252:1    0   1M  0 part
+└─vda2           252:2    0  10G  0 part /
+vdb              252:16   0   4G  0 disk
+├─vdb1           252:17   0   1G  0 part
+│ └─my_vg-my_vol 253:0    0   4G  0 lvm  /mnt
+├─vdb2           252:18   0   1G  0 part
+│ └─my_vg-my_vol 253:0    0   4G  0 lvm  /mnt
+└─vdb3           252:19   0   2G  0 part
+  └─my_vg-my_vol 253:0    0   4G  0 lvm  /mnt
+
+$ sudo df -h
+Filesystem                Size  Used Avail Use% Mounted on
+/dev/mapper/my_vg-my_vol  2.0G  2.0G     0 100% /mnt        # система по-прежнему видит только 2 Гб
+
+  3) Необходимо расширить файловую систему
+
+  $ sudo resize2fs /dev/my_vg/my_vol
+  resize2fs 1.45.5 (07-Jan-2020)
+  Filesystem at /dev/my_vg/my_vol is mounted on /mnt; on-line resizing required
+  old_desc_blocks = 1, new_desc_blocks = 1
+  The filesystem on /dev/my_vg/my_vol is now 1045504 (4k) blocks long.
+
+  $ sudo df -h
+  Filesystem                Size  Used Avail Use% Mounted on
+  /dev/mapper/my_vg-my_vol  3.9G  2.0G  1.8G  52% /mnt
+
+Итог: 3 диска объединены в один
+
+
+Уменьшение размеров диска LVM
+
+  !! Это опасная и нежелательная операция:
+    - неверно указанные размеры нового логического диска lvm могут повредить ваши данные;
+    - уменьшение размера требует отключения файловой системы
+
+  1) Отмонтируем раздел.
+    !! в момент, когда мы отмонтируем раздел, не стоит находиться в его папке
+  
+      $ sudo df -h
+      Filesystem                Size  Used Avail Use% Mounted on
+      /dev/mapper/my_vg-my_vol  3.9G  2.0G  1.8G  52% /mnt
+
+      $ sudo umount /mnt
+
+  2) Проверим файловую систему на ошибки и уменьшим логический диск lvm на 500 МБ:
+
+    $ sudo fsck.ext4 -f /dev/my_vg/my_vol
+
+    e2fsck 1.45.5 (07-Jan-2020)
+    Pass 1: Checking inodes, blocks, and sizes
+    Pass 2: Checking directory structure
+    Pass 3: Checking directory connectivity
+    Pass 4: Checking reference counts
+    Pass 5: Checking group summary information
+    /dev/my_vg/my_vol: 12/261120 files (0.0% non-contiguous), 526848/1045504 blocks
+
+    $ sudo lvreduce -L-500M /dev/my_vg/my_vol
+      WARNING: Reducing active logical volume to 3.50 GiB.
+      THIS MAY DESTROY YOUR DATA (filesystem etc.)
+    Do you really want to reduce my_vg/my_vol? [y/n]: y
+      Size of logical volume my_vg/my_vol changed from <3.99 GiB (1021 extents) to 3.50 GiB (896 extents).
+      Logical volume my_vg/my_vol successfully resized.
+
+    $ sudo resize2fs -f /dev/my_vg/my_vol
+    resize2fs 1.45.5 (07-Jan-2020)
+    Resizing the filesystem on /dev/my_vg/my_vol to 917504 (4k) blocks.
+    The filesystem on /dev/my_vg/my_vol is now 917504 (4k) blocks long.
+
+  !! Размер свободного места на логическом диске lvm должен быть точно больше размера уменьшаемого места,
+  иначе часть данных потеряется.
+
+  3) Монтируем раздел снова
+
+      $ sudo mount -a
+      $ sudo df -h
+      Filesystem                Size  Used Avail Use% Mounted on
+      /dev/mapper/my_vg-my_vol  3.5G  2.0G  1.4G  60% /mnt
+
+Итог: Размер уменьшился и наш файл payload на месте.
+
+
+"Трюки" с LVM:
+  
+  Перемещение раздела (при переносе со старого на новый диск):
+
+    $ pvmove -n my_vol /dev/sda1 
+
+  Резервное копирование логического раздела:
+
+    $ lvcreate -s -n snap -L 5g my_vg/my_vol 
+
+  Откат:
+
+    $ lvconvert --merge my_vol/snap 
+
+  Удаление:
+
+    $ lvremove /dev/my_vg/my_vol 
 

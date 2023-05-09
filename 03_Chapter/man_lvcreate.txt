@@ -56,11 +56,15 @@ LV не могут использоваться как стандартные б
   Используйте инферентные типы (inferred) с осторожностью, так как это может привести к неожиданным результатам.
 
 -l|--extents Number[PERCENT] - 
-Specifies the size of the new LV in logical extents. 
-The --size and --extents options are alternate methods of specifying size.
-The total number of physical extents used will be greater when redundant data is needed for RAID levels.
-An alternate syntax allows the size to be determined indirectly as a percentage of the size of a related VG, LV, or set of PVs.
-The suffix %VG denotes the total size of the VG, the suffix %FREE the remaining free space in the VG, and the suffix %PVS the free space in the specified PVs.
-For a snapshot, the size can be expressed as a percentage of the total size of the origin LV with the suffix %ORIGIN (100%ORIGIN provides space for the whole origin).
-When expressed as a percentage, the size defines an upper limit for the number of logical extents in the new LV.
-The precise number of logical extents in the new LV is not determined until the command has completed.
+  = Указывает размер нового LV в логических экстентах. 
+Опции --size и --extents являются альтернативными методами указания размера.
+Общее количество используемых физических экстентов будет больше, если для уровней RAID требуется резервирование данных.
+Альтернативный синтаксис позволяет определить размер косвенно, как процент от размера связанного VG, LV или набора PV.
+  - Суффикс %VG обозначает общий размер VG,
+  - суффикс %FREE - оставшееся свободное пространство в VG,
+  - суффикс %PVS - свободное пространство в указанных PV.
+
+Для моментального снимка размер может быть выражен в процентах от общего размера исходного LV с суффиксом %ORIGIN
+(100%ORIGIN обеспечивает пространство для всего исходного файла).
+Если размер выражен в процентах, он определяет верхний предел для количества логических экстентов в новом LV.
+Точное количество логических экстентов в новом LV НЕ ОПРЕДЕЛЯЕТСЯ до завершения команды.
