@@ -1,0 +1,14 @@
+source: https://4te.me/post/systemd-unit-ubuntu/
+more: https://linux-notes.org/pishem-systemd-unit-fajl/
+
+[Unit]
+Description=TelegramBotMonitoring
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/telegram-site-monitoring -telegrambottoken 397______:___________WRDsIU -chatid -14____640
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
