@@ -1,14 +1,48 @@
 source: https://4te.me/post/systemd-unit-ubuntu/
 more: https://linux-notes.org/pishem-systemd-unit-fajl/
 
+# /etc/systemd/system/telegram-bot.service
+
 [Unit]
 Description=TelegramBotMonitoring
-After=network.target
+After=network.target				# Запускать этот юнит после того как поднимутся сетевые интерфейсы
 
 [Service]
-Type=simple
+Type=simple					# Тип нашего сервиса
 ExecStart=/usr/local/bin/telegram-site-monitoring -telegrambottoken 397______:___________WRDsIU -chatid -14____640
-Restart=always
+Restart=always				# systemd будет перезапускать демон независимо от того почему он завершился
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=multi-user.target			# демон нужно запустить когда система грузится в multi-user режиме
+
+
+Для Type чаще всего используются
+  • simple
+    - демон запускается, начинает ожидать на консоли и не отфоркивается.
+	
+  • forking
+    - демон запускается, потом форкается и завершает родительский процесс.
+	  Многие программы именно так и запускаются, чтобы перейти в background режим.
+	
+  • oneshot
+    - используется для скриптов которые запускаются, отрабатывают и завершаются
+
+ExecStart — команда для запуска демона.
+
+Restart — рестартовать демон, если он завершится/упадет
+  =always  - systemd будет перезапускать демон независимо от того почему он завершился
+  =on-failure  - перезапуск,  если демон вышел с ненулевым кодом возврата, или был завершен по сигналу (kill DAEMONPID)
+
+WantedBy — указывает условие запуска демона (?)
+
+
+После написания unit-файла и размещения его в /etc/systemd/system/
+  1. сделать релоад systemd:
+    $ sudo systemctl daemon-reload
+
+  2. добавить созданый юнит в автозагрузку
+    $ sudo systemctl enable <unitfile-name>
+
+
+	
+  
