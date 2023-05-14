@@ -1,5 +1,10 @@
 source: https://4te.me/post/systemd-unit-ubuntu/
 more: https://linux-notes.org/pishem-systemd-unit-fajl/
+systemd.unit Unit configuration: https://www.freedesktop.org/software/systemd/man/systemd.unit.html
+Understanding Systemd Units and Unit Files: https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files
+
+How to redirect output of systemd service to a file: 
+https://stackoverflow.com/questions/37585758/how-to-redirect-output-of-systemd-service-to-a-file
 
 # /etc/systemd/system/telegram-bot.service
 
