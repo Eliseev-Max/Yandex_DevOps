@@ -1,0 +1,381 @@
+Основы сетей: проблемы с подключением к удалённому серверу
+
+  Из этого урока вы научитесь:
+    Выявлять проблемы с сетевым доступом.
+    Настраивать ssh.
+    Оценивать корректность настроек системного файервола и открытых портов в системе.
+    Монтировать сетевую файловую систему
+	
+##################################################################
+# Grafana — это мультиплатформенное и опенсорсное веб-приложение #
+#           для аналитики и интерактивной визуализации           #
+##################################################################
+
+Утилита netstat
+  - отображает различную статистическую информацию:
+    • сетевые подключения,
+	• статистику интерфейсов,
+	• таблицы маршрутизации,
+	• состояние портов
+	и т.п.
+
+(man netstat: http://www.opennet.ru/man.shtml?category=1&topic=netstat)
+
+  Пример использования утилиты:
+  $ netstat -nap
+    -a = Показывать состояние всех сокетов; обычно сокеты, используемые серверными процессами, не показываются
+	-n = Показывать сетевые адреса как числа. netstat обычно показывает адреса как символы
+	-p protocol = Ограничить показ статистики или адресов управляющих блоков только протоколом protocol, например, tcp
+
+
+  $ sudo netstat -nap | grep ssh | grep -v tcp6
+  # - вывести на экран строку с состоянием только приложения ssh,
+  # чтобы получить информацию о pid и используемому приложением порту,
+  # из-под пользователя ubuntu и только для IPv4
+
+
+wget и curl
+  Wget (https://linux.die.net/man/1/wget)
+  GNU wget - это открыто распостраняемая утилита для неинтерактивной загрузки файлов из интернет.
+  Она поддерживает протоколы 
+    * HTTP,
+	* HTTPS,
+	* FTP,
+	** загрузку с серверов прокси по протоколу HTTP (получение файлов через HTTP-прокси).
+
+  Wget неинтерактивен, то есть может работать в фоновом режиме, пока пользователь не вошел в систему.
+  Wget vs web-browsers:
+    Wget: позволяет начать поиск и отключиться от системы, позволив Wget завершить работу
+	web-browsers:  требуют постоянного присутствия пользователя → помеха при передаче большого количества данных
+
+  Wget может переходить по ссылкам на страницах HTML, XHTML и CSS, создавая локальные версии удаленных веб-сайтов,
+  полностью воссоздавая структуру каталогов исходного сайта (=рекурсивная загрузка).
+  
+  При этом Wget соблюдает стандарт исключения роботов (/robots.txt).
+  
+  !Wget можно проинструктировать преобразовывать ссылки в загруженных файлах так, чтобы они указывали на локальные файлы для просмотра в автономном режиме.
+
+
+  curl
+  (man page: https://curl.se/docs/manpage.html
+   tutorial: https://github.com/curl/curl/blob/master/docs/MANUAL.md
+  )
+  curl - это инструмент для передачи данных с сервера или на сервер.
+  
+  Он поддерживает эти протоколы:
+    • DICT;				# позволяет искать слова с помощью онлайн-словарей
+	• FILE;				# чтение или запись локальных файлов (curl не поддерживает удаленный доступ к URL file://)
+	• FTP, FTPS;		# большое количество настроек; с использованием или без использования TLS
+	• GOPHER, GOPHERS	# получение файлов
+	• HTTP, HTTPS
+    • IMAP, IMAPS;		# может "скачивать" электронные письма для вас. +/- TLS
+	• LDAP, LDAPS;		# может выполнять для вас поиск каталогов +/- TLS
+	• MQTT;
+	• POP3, POP3S;
+	• RTMP, RTMPS;
+	• RTSP,
+	• SCP,
+	• SFTP,
+	• SMB, SMBS;
+	• SMTP, SMTPS;
+	• TELNET,
+	• TFTP,
+	• WS, WSS.
+	
+	Команда предназначена для работы без участия пользователя.
+	Полезные фичи:
+	- поддержка прокси,
+	- аутентификация пользователя,
+	- загрузка по FTP,
+	- отправка по HTTP,
+	- SSL-соединения,
+	- cookies,
+	- возобновление передачи файлов
+	и многое другое.
+
+
+Программы Linux (по умолчанию) отвечающие за защиту системы при работе в сети:
+  - iptables
+  - firewalld
+  
+IPTABLES
+  
+  $ sudo iptables -n -L -v --line-numbers
+(пример вывода):
+
+Chain INPUT (policy ACCEPT)
+num   pkts bytes target     prot opt in     out     source             destination            
+1        0     0 ACCEPT     tcp  --  eth0 *       0.0.0.0/0            0.0.0.0/0            tcp dpt:8080
+2        0     0 ACCEPT     tcp  --  eth0 *       0.0.0.0/0            0.0.0.0/0            tcp dpt:22
+3        0     0 DROP       all  --  eth0 *       0.0.0.0/0            0.0.0.0/0            tcp
+
+Chain FORWARD (policy DROP)
+num  target     prot opt source               destination
+
+Chain OUTPUT (policy ACCEPT)
+num  target     prot opt source               destination 
+
+  INPUT - входящий трафик
+  OUTPUT - исходящий трафик
+  FORWARD - перенаправленный трафик
+  
+  номер в начале строк отвечает за приоритеты
+  
+Добавление разрешающего правила для приложения:
+  $ sudo iptables -I INPUT 3 -s 0.0.0.0/0 -i eth0 -p tcp --dport 80 -j ACCEPT
+    где
+	-I INPUT 3 — вставить новое правило 3-й строкой в список
+    -s — указать, откуда будут идти запросы адреса и маски
+    -i — через какой сетевой интерфейс
+    -p и --dport — описывает протокол и порт
+    -j — описывает цель правила
+
+(iptables docs: https://www.opennet.ru/man.shtml?topic=iptables&category=8&russian=0)
+
+Пример из практики:
+  Порядок команд для настройки доступа к Nginx, работающему на 80 порту из сети 172.1.50.0/24
+  ! Изначально правила пусты.
+  # ‼ Команда для удаления настроенного правила:
+  # iptables -D INPUT 1
+  
+iptables -I INPUT -s 0.0.0.0/0 -i eth0 -p tcp --dport 88 -j ACCEPT
+iptables -I INPUT 2 -s 172.1.60.0/24 -i eth0 -p tcp --dport 80 -j ACCEPT
+iptables -I INPUT 3 -i eth0 -p tcp --dport 80 -j DROP
+iptables -I INPUT 3 -s 172.1.50.0/24 -i eth0 -p tcp --dport 80 -j ACCEPT
+
+!!!!!!!!!!!!!!!!!
+! iptables-save !
+!!!!!!!!!!!!!!!!!
+
+
+Доступ к удалённой машине по ssh
+  $ ssh-keygen -t dsa | ecdsa | ed25519 | rsa | rsa1  -b <bytes>
+    -t — тип ключа
+    -b — длина ключа в битах (по умолчанию 3072 для RSA)
+    -f — путь к файлу ключа (по умолчанию ~/.ssh/id_rsa)
+    -C — комментарий к ключу (по умолчанию username@hostname)
+    -P — пароль для доступа к ключу
+
+  Для доступа к удалённой машине необходимо разместить публичный ключ в очередной строчке файла .ssh/authorized_keys
+  После генерации пары ключей, необходимо поместить .pub ключ на удалённом сервере.
+  Удобнее всего это делать через ssh-copy-id
+    $ ssh-copy-id -i $HOME/.ssh/id_rsa.pub <имя пользователя>@<ip сервера куда хотим получить доступ> 
+
+  Для работы с несколькими удалёнными серверами через ssh необходимо настроить своего ssh-клиента
+  ~/.ssh/config
+  
+  Для подключения к разным хостам можно задавать общие настройки:
+
+	StrictHostKeyChecking no
+	UserKnownHostsFile=/dev/null
+	#RequestTTY force
+	#LogLevel=quiet
+
+Уникальные настройки для хоста gitlab-runner:
+	Host gitlab-runner
+	  HostName 10.20.30.40
+	  User ya
+	  ForwardAgent yes
+	  IdentityFile ~/.ssh/id_rsa
+	  ProxyJump jump
+
+Настройки для всех хостов, кроме gitlab-runner:
+	Host * !gitlab-runner
+	  ControlMaster auto
+	  ControlPath ~/.ssh/sockets/%r@%h-%p
+	  ControlPersist 600
+	  StrictHostKeyChecking no
+	  UserKnownHostsFile=/dev/null
+	  ServerAliveInterval 30
+	  ServerAliveCountMax 25
+	  ForwardAgent yes
+	  
+‼! Настройки сервера для подключения к нему по ssh других пользователей:
+#### вносим изменения в /etc/ssh/sshd_config, меняем дефолтные настройки sshd
+Port                            22
+Protocol                        2
+UsePAM                          yes
+PermitRootLogin                 no
+PasswordAuthentication          yes
+PermitEmptyPasswords            no
+PubkeyAuthentication            yes
+AllowTcpForwarding              no
+X11Forwarding                   no
+StrictModes                     yes
+UsePAM                          yes
+PrintMotd                       no
+PrintLastLog                    no
+TCPKeepAlive                    yes
+UseDNS                          no
+LoginGraceTime                  1m
+maxauthtries                    4
+Subsystem                       sftp internal-sftp
+AcceptEnv                       LANG LC_*
+AllowAgentForwarding            yes
+ChallengeResponseAuthentication no
+AllowUsers                      ya root@IP
+
+После внесения изменений перезагрузить сервис:
+  $ sudo systemctl restart ssh
+  
+(мануал по настройкам sshd_config: https://www.opennet.ru/man.shtml?topic=sshd_config&category=5&russian=0)
+
+
+$ ip address show == ip ad == ip a
+
+Утилита безопасного копирования scp
+  - это утилита (программа удаленного копирования файлов), которая работает по протоколу SSH.
+  Основное предназначение: перемещение файлов между локальной и удалённой или двумя удалёнными системами.
+  Синтаксис:
+    $ scp опции пользователь1@хост1:файл пользователь2@хост2:файл
+
+(https://manpages.ubuntu.com/manpages/bionic/man1/scp.1.html ;
+https://losst.pro/kopirovanie-fajlov-scp
+)
+
+
+Чтобы сервер мог подключиться к DNS-серверу с IP-адресами: 10.9.8.1; 10.9.8.2, нужно
+  добавить IP-адреса в /etc/resolv.conf:
+  nameserver 10.9.8.1
+  nameserver 10.9.8.2
+  
+# Адрес 127.0.0.53 в resolv.conf - это не настоящий IP от DNS! Это ЗАГЛУШКА
+# В такой ситуации работает сервис systemd-resolve для резолва доменных имен и настройки конфигурации
+#  в файле /run/systemd/resolve/resolv.conf.
+
+Также можно узнать о DNS сервере с помощью команды:
+  $ sudo resolvectl status
+ 
+(more about systemd-resolved: https://wiki.archlinux.org/title/Systemd-resolved)
+
+Как доменные имена резолвятся в IP-адреса, можно посмотреть с помощтю команд:
+  dig <server.name.zone>
+  nslookup
+  
+Пример:
+  $ dig server.db.yandex.ru
+
+; <<>> DiG 9.16.1-Ubuntu <<>> server.db.yandex.ru
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 7715
+;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4000
+;; QUESTION SECTION:
+;server.db.yandex.ru        IN    A
+
+;; AUTHORITY SECTION:
+server.db.yandex.ru            900    IN    SOA    ns.uniregistry.net. ops.uniregistry.net. 1632296111 1800 900 604800 86400
+
+;; Query time: 263 msec
+;; SERVER: 34.156.34.5#53(34.156.34.5)
+;; WHEN: Ср сен 22 10:39:33 MSK 2021
+;; MSG SIZE  rcvd: 103
+
+Вызов dig с указанием, чтобы резолв имён шёл через указанный адрес DNS-сервера:
+  $ dig @10.9.8.1 server.db.yandex.ru
+  
+; <<>> DiG 9.16.1-Ubuntu <<>> server.db.yandex.ru
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 28967
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4000
+;; QUESTION SECTION:
+;server.db.yandex.ru        IN    A
+
+;; ANSWER SECTION:
+server.db.yandex.ru    600    IN    A    10.9.8.21		#### соотношение имени и адреса
+
+;; Query time: 3 msec
+;; SERVER: 10.9.8.1#53(10.9.8.1)
+;; WHEN: Ср сен 22 10:39:13 MSK 2021
+;; MSG SIZE  rcvd: 64
+
+#*тайлы - специальные файлы, мини-картинки, из которых состоят большие карты.
+
+
+Монтирование NFS-хранилищ
+## 178.154.212.255 - реальный адрес, нужен для ДЗ
+## НЕ ЗАБЫТЬ создать папку /mnt/nfs, в которую будет подмонтирована сетевая ФС
+
+‼! Убедиться, что установлена утилита nfs-common
+► Если установлена, выполнить подкоючение.
+  
+  $ sudo mount -t nfs 172.168.1.4:/opt/data/nfs /mnt/nfs
+  
+## команда отключения:
+  $ sudo umount /mnt/nfs
+
+## Чтобы узнать, какие ресурсы доступны на NFS-сервере, необходимо выполнить команду:
+
+  $ sudo showmount -e 172.168.1.4		# использовать реальный IP-адрес
+  
+# ‼! Чтобы не монтировать сетевую ФС после каждой перезагрузки, а монтирование происходило при старте ОС:
+  добавим в /etc/fstab
+  
+  172.168.1.4:/opt/data/nfs /mnt/nfs  nfs auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0
+
+
+##########################
+# Справка об NFS-сервере #
+##########################
+
+NFS (сетевая файловая система) позволяет хосту монтировать разделы, находящиеся на удалённом хосте, и использовать их аналогично локальным файловым системам.
+  + позволяет централизованно хранить файлы 
+  + и получать к ним полноценный доступ с разных хостов
+  
+Утилита nfs-kernel-server требуется для настройки NFS-сервера.
+‼ Для работы NFS должна быть включена её поддержка в ядре.
+NFS использует удалённые вызовы процедур для управления запросами между клиентами и серверами.
+За это отвечает служба portmap.
+
+Когда клиент пытается подключиться к удалённой ФС, происходит процедура аутентификации по адресу хоста.
+После предоставления доступа любые операции с файлами и каталогами отправляются на сервер с использованием RPC.
+
+Portmap требуется для сопоставления запросов RPC с службами. Процессы RPC уведомляют portmap при запуске, указывая номер порта, который они слушают. Затем клиентская система связывается с portmap, и та перенаправляет клиента на порт.
+
+Службу portmap можно использовать с файлами доступа к хосту
+  /etc/hosts.allow
+    и
+  /etc/hosts.deny
+для управления удалёнными системами, которым разрешено использовать службы на основе RPC на вашем компьютере.
+Правила контроля доступа для portmap повлияют на все службы на основе RPC.
+
+Каждая файловая система, экспортируемая удалённым пользователям через NFS,
+а также права доступа, относящиеся к этим файловым системам, находятся в файле:
+  /etc/exports.
+Этот файл считывается командой exportfs, чтобы предоставить rpc.mountd и rpc.nfsd информацию,
+необходимую для удалённого монтирования файловой системы авторизованным хостом.
+
+  /etc/exports — конфигурационный файл NFS.
+#### В нём описывается следующий формат:
+
+<папка на NFS сервере, к которой будет дан доступ> <ip адрес или подсеть, из которой клиенты могут подключаться к NFS серверу>
+(<права на файлы в расшаренной папке r — чтение, w — редактирование>,<sync — позволяет серверу не отвечать на запросы, пока файл не будет записан на диск>)
+
+(The /etc/exports Configuration File: https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/5/html/deployment_guide/s1-nfs-server-config-exports)
+
+Пример:
+/srv/data 10.9.8.1(rw) 10.9.0.0/255.255.0.0(ro)
+
+Команда exportfs позволяет выборочно экспортировать или не экспортировать каталоги без перезапуска различных служб NFS.
+Если изменения в файл /etc/exports были внесены во время работы сервера NFS, то для вступления их в силу необходимо
+выполнить команду:
+  $ sudo exportfs -a 
+
+или перезапустить сервис:
+  $ sudo systemctl restart nfs-kernel-server 
+
+
+---
+---
+Несколько правил
+  Создать новую ветку в GitLab и работать только в ней.
+  Выполнить все миссии.
+  Создать merge request в GitLab.
+  Только после принятия предыдущей практической работы отправить наставнику ссылку на merge request в GitLab.
