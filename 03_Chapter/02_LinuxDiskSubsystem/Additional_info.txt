@@ -1,0 +1,40 @@
+Общие сведения о Linux. systemd, и т.д.
+
+  1. systemd:  https://www.freedesktop.org/wiki/Software/systemd/
+
+  2. Как установить и отключить переменные локальной, пользовательской и системной среды в Linux:
+  https://blog.sedicomm.com/2017/11/13/kak-ustanovit-i-otklyuchit-peremennye-lokalnoj-polzovatelskoj-i-sistemnoj-sredy-v-linux/
+  
+  3. Использование journalctl для просмотра и анализа логов: подробный гайд
+  https://habr.com/ru/companies/ruvds/articles/533918/
+  
+  4. lsof - administrator's utility
+  http://rus-linux.net/kos.php?name=/papers/lsof/lsof.html
+
+Работа с дисковой подсистемой
+
+  1. 12 полезных команд «df» для проверки дискового пространства в Linux:
+  https://blog.sedicomm.com/2020/06/16/12-poleznyh-komand-df-dlya-proverki-diskovogo-prostranstva-v-linux/?ysclid=lhkjwblngm284647624
+  
+  2. 
+
+
+Работа с сетью
+
+  1. Команда netstat в Linux:
+  https://linuxcookbook.ru/articles/komanda-netstat-linux
+  
+  2. 11 примеров использования netstat:
+  https://putty.org.ru/articles/netstat-linux-examples.html
+  
+  3. systemd-resolved:  https://wiki.archlinux.org/title/Systemd-resolved
+  
+  4. Как сделать постоянными изменения DNS в resolv.conf на Linux
+  https://itisgood.ru/2021/06/03/kak-sdelat-postojannymi-izmenenija-dns-v-resolv-conf-na-linux/
+  
+  5. curl tutorial:  https://github.com/curl/curl/blob/master/docs/MANUAL.md
+  
+  6. scp manual:  https://manpages.ubuntu.com/manpages/bionic/man1/scp.1.html
+  
+  7. apt.conf "Acquire::http::proxy "http://proxy.server.org:port/" ":
+  https://askubuntu.com/questions/349702/apt-conf-acquirehttpproxy-proxyserverport-seems-not-to-be-used-ubuntu-13
