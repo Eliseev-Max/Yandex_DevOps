@@ -1,0 +1,4 @@
+Создаём несколько пользователей одним скриптом:
+https://www.geeksforgeeks.org/create-multiple-users-using-shell-script-in-linux/
+https://blog.sedicomm.com/2019/09/02/kak-dobavit-neskolkih-uchetnyh-zapisej-polzovatelej-v-linux/
+

@@ -425,7 +425,11 @@ other::r--
 # ‼! Нельзя назначать права rwx для others! #
 #############################################
 
-(дополнительный материал по ACL: https://help.ubuntu.ru/wiki/access_control_list)
+(дополнительный материал по ACL:
+  1. https://help.ubuntu.ru/wiki/access_control_list
+  2. https://ru.linux-console.net/?p=831#gsc.tab=0
+)
+
 Синтаксис setfalc:
   $ setfacl <опции> <ключ> <список правил> <объект>
   ## <опции> - задает дополнительные опции;
