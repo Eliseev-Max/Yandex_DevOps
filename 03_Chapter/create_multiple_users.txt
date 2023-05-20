@@ -2,3 +2,9 @@
 https://www.geeksforgeeks.org/create-multiple-users-using-shell-script-in-linux/
 https://blog.sedicomm.com/2019/09/02/kak-dobavit-neskolkih-uchetnyh-zapisej-polzovatelej-v-linux/
 
+Утилита newusers
+
+useradd и adduser  = эти команды предназначены для добавления одной учетной записи пользователя в систему одновременно.
+
+Newusers — полезная утилита командной строки, используемая для одновременного обновления и создания новых учетных записей пользователей.
+

@@ -406,11 +406,6 @@ Portmap требуется для сопоставления запросов RP
 
 ---
 ---
-Несколько правил
-  Создать новую ветку в GitLab и работать только в ней.
-  Выполнить все миссии.
-  Создать merge request в GitLab.
-  Только после принятия предыдущей практической работы отправить наставнику ссылку на merge request в GitLab.
 
 Бонусное задание 2. Возможная проблема. Решение:
 https://superuser.com/questions/657071/mount-nfs-rpc-statd-is-not-running-but-is-required-for-remote-locking
