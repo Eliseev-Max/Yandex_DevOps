@@ -139,6 +139,11 @@ num  target     prot opt source               destination
 
 (iptables docs: https://www.opennet.ru/man.shtml?topic=iptables&category=8&russian=0)
 
+-> Разрешите в iptables входящее подключение на порт 80 для интерфейса eth0 и всех подсетей. Используйте протокол TCP.
+sudo iptables -I INPUT -s 0.0.0.0/0 -i eth0 -p tcp --dport 80 -j ACCEPT
+-> Запретите в iptables входящее подключение на порт 8080 для интерфейса eth0 и всех подсетей. Используйте протокол TCP.
+sudo iptables -I INPUT -s 0.0.0.0/0 -i eth0 -p tcp --dport 8080 -j DROP
+
 Пример из практики:
   Порядок команд для настройки доступа к Nginx, работающему на 80 порту из сети 172.1.50.0/24
   ! Изначально правила пусты.
