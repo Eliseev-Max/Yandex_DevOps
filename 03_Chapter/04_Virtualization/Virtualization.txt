@@ -133,3 +133,65 @@ $ vagrant destroy -f
 
 (Справка по командам CLI:  https://developer.hashicorp.com/vagrant/docs/cli)
 
+Развёртывание и настройка web-сервера Nginx на виртуальной машине
+
+  1. Пишем скрипт развёртывания (provisioning script) bootstrap.sh
+---
+#!/bin/sh
+
+echo 'deb https://nginx.org/packages/ubuntu/ focal nginx' > /etc/apt/sources.list.d/nginx.list
+echo 'deb-src https://nginx.org/packages/ubuntu/ focal nginx' >> /etc/apt/sources.list.d/nginx.list
+apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ABF5BD827BD9BF62
+apt-get update -y
+apt-get install nginx -y
+systemctl enable nginx
+systemctl start nginx
+---
+
+  2. Поправим Vagrantfile, чтобы он прочитал и выполнил bash-скрипт при развёртывании виртуальной машины:
+---
+config.vm.provision :shell,
+path: "bootstrap.sh"
+---
+## Другие варианты: https://developer.hashicorp.com/vagrant/docs/provisioning/shell
+
+  3. Запускаем виртуалку:
+    $ vagrant up
+	или
+	$ vagrant reload --provision    # если виртуалка уже запускалась ранее
+	
+	# проверяем из виртуалки:
+	shell
+    $ wget -qO- 127.0.0.1
+	
+  4. Чтобы сделать сайт доступным снаружи, нужно пробросить порты с гостевой ОС на основную (port forwarding). Для этого внесём изменения в Vagrantfile:
+    config.vm.network :forwarded_port,
+    guest: 80,
+    host: 8080
+
+  5. Обновляем:
+    $ vagrant reload --provision
+
+Проверяем:
+Сделаем wget (или зайдём в браузере на localhost:8080) на основном хосте и получим страницу:
+
+$ wget -qO- 127.0.0.1:8080 
+
+Итоговый Vagrantfile у нас вышел вот таким:
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "generic/ubuntu2004"
+  config.vm.provider "virtualbox" do |v|
+    v.memory = "1024"
+    v.cpus = 2
+  end
+  config.vm.provision :shell,
+    path: "bootstrap.sh"
+
+  config.vm.network :forwarded_port,
+    guest: 80,
+    host: 8080
+end
+
+(подробнее про работу с сетью: https://developer.hashicorp.com/vagrant/docs/providers/virtualbox/networking)
+
