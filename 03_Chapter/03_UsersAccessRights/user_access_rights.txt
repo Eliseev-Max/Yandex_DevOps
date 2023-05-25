@@ -481,6 +481,7 @@ other::r--
   Пример:
     setfacl -m u:allexserv:rw myfile.odt		# назначает пользователю allexserv права на чтение и запись
 	$ sudo setfacl -m default:u:front-user:rx /var/www-data/htdocs
+	## ‼! ТОЛЬКО ДИРЕКТОРИИ могут иметь параметр default:...
 
   g:<gid>:<perms>*
     - назначает ACL для доступа заданной группе.
