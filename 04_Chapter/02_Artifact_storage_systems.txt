@@ -19,7 +19,143 @@ SemVer
 При каждом увеличении минорной версии патч-версия обнуляется. При обновлении мажорной обнуляются уже патч- и минорная версии.
 SemVer позволяет закрепиться не просто на конкретных версиях, но и на целом «коридоре» версий, которые стабильно поддерживают необходимый нам функционал.
 
-Иногда можно встретить x.y.z-alfa, x.y.z-0.2.1 или другие обозначения. Обычно добавление дефиса и словесно-буквенных названий, следующих за патч-версией, допускаются для предрелизных сборок. Они обладают более низким приоритетом и указывают, что версия нестабильна и может быть несовместима с другими версиями.
+Иногда можно встретить x.y.z-alfa, x.y.z-0.2.1 или другие обозначения.
+Обычно добавление дефиса и словесно-буквенных названий, следующих за патч-версией, допускаются для предрелизных сборок.
+Они обладают более низким приоритетом и указывают, что версия нестабильна и может быть несовместима с другими версиями.
 
 Иногда можно встретить x.y.z+20130313144700 или x.y.z-beta+exp.sha.511, в которых обозначены сборочные метаданные, переданные через знак "+", после патч-версии. Обычно сборочные метаданные игнорируют при определении старшенства версий.
+
+Приоритеты
+  - определяется по версиям артефакта, слева направо,
+  сравниваются числа, например 1.0.9 < 1.2.0 < 2.0.0.
+  Если сравниваемые версии равны, то более низкий приоритет отходит к предрелизной версии
+  (подробнее: https://semver.org/lang/ru/)
+
+
+Добавление версии в переменную (YAML-файл: .gitlab-ci.yml):
+  variables:
+    VERSION: 1.0.${CI_PIPELINE_ID}
+
+(переменная задана в pom.xml) -> добавить к mvn package ещё и -Dversion.application=${VERSION}
+Фронтенд: sausage-store-0.0.1 -> sausage-store-${VERSION}
+
+#### .gitlab-ci.yml ####
+
+variables:
+  VERSION: 1.0.${CI_PIPELINE_ID}
+  MAVEN_REPO_PATH: ${CI_PROJECT_DIR}/.m2/repository
+
+stages:
+  - build
+
+build-backend-code-job:
+  stage: build  
+  only:
+    changes:
+      - backend/**/*
+  script:
+    - cd backend
+    - mvn package -Dmaven.repo.local=${CI_PROJECT_DIR}/.m2/repository -Dversion.application=${VERSION}
+  artifacts:
+    paths:
+      - backend/target/sausage-store-${VERSION}.jar
+      - ${CI_PROJECT_DIR}/.m2/
+
+
+Artifactory VS Nexus
+Artifactory:
+  + имеет больше подвязок на внешние системы (например, TeamCity);
+  + поддерживает больше различных пакетов;
+  + имеет в бесплатной версии LDAP.
+
+Nexus:
+  + более нативно работает с Java
+
+(Nexus vs Artifactory: https://www.sonatype.com/compare/sonatype-nexus-versus-jfrog-artifactory)
+(Nexus repository vs Gitlab: https://about.staging.gitlab.com/devops-tools/sonatype-nexus-repo-vs-gitlab.html)
+
+Создать 2 репозитория в Nexus:
+  * sausage-store-backend (формата maven 2)
+  * sausage-store-frontend (формата raw)
+
+#### Примечание ####
+В Nexus при создании репозитория типа maven2 спрашивается, какие типы артефактов будут в нём храниться:
+  * Snapshot
+  * Release
+  * и то, и другое.
+В мире maven'a так сложилось, что для разных этапов готовности продукта артефакт хранится в своём собственном репозитории.
+То есть, когда наш продукт сырой и мы ещё не готовы опубликовать готовую версию, а запустить и проверить её хочется
+(например, тот артефакт который скомпилируется для прогона тестов на прикоммите),
+мы добавляем к имени версии постфикс -SNAPSHOT, и тогда maven по умолчанию будет заливать в snapshot репозиторий.
+Без этого постфикса все артефакты будут публиковаться в release репозиторий.
+
+Чтобы связать бэкенд и Nexus, требуется:
+  -> поправить pom.xml
+  -> настроить доступ с Gitlab до Nexus, (дабы он смог без проблем заливать новые версии)
+
+Настройка pom.xml:
+# добавим блок с настройками репозитория (Nexus):
+
+<distributionManagement>
+  <repository>
+       <id>sausage-store</id>
+       <name>sausage-store</name>
+       <url>${env.NEXUS_REPO_URL}/sausage-store/</url>
+   </repository>
+</distributionManagement>
+
+Настройка связки GitLab и Nexus
+# добавить в репозиторий файл settings.xml:
+
+<settings xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.1.0 http://maven.apache.org/xsd/settings-1.1.0.xsd"
+    xmlns="http://maven.apache.org/SETTINGS/1.1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <servers>
+    <server>
+      <id>sausage-store</id>
+      <username>${env.NEXUS_REPO_USER}</username>
+      <password>${env.NEXUS_REPO_PASS}</password>
+    </server>
+  </servers>
+</settings>
+
+Все переменные с логинами и паролями (NEXUS_REPO_USER, NEXUS_REPO_PASS, NEXUS_REPO_URL)
+в открытом виде НЕ передавать! Только через Settings -> CI/CD -> Variables
+
+Правки в .gitlab-ci.yml
+
+stages:
+  - release
+
+upload-backend-release:
+  stage: release
+  only:
+    changes:
+      - backend/**/*
+  needs:
+    - build-backend-code-job
+  script:
+    - cd backend
+    - mvn -Dmaven.repo.local=${CI_PROJECT_DIR}/.m2/repository -s settings.xml -Dversion.application=${VERSION} -DskipTests deploy
+
+
+Фронтенд можно заливать через curl:
+
+upload-frontend-release:
+  stage: release
+  only:
+    changes:
+    - frontend/**/*
+  needs:
+    - build-frontend-code-job
+  script:
+    - cd frontend/dist
+    - tar czvf sausage-store-${VERSION}.tar.gz frontend
+    - curl -v -u "${NEXUS_REPO_USER}:${NEXUS_REPO_PASS}" --upload-file sausage-store-${VERSION}.tar.gz ${NEXUS_REPO_URL}/sausage-store-front/sausage-store/${VERSION}/sausage-store-${VERSION}.tar.gz
+
+Чтобы не хранить бесполезные артефакты, в GitLab CI придумали cache — когда мы можем временно сохранять файлы и папки для использования в последующих джобах:
+cache:
+  paths:
+    - ${CI_PROJECT_DIR}/.m2/repository # для хранения зависимостей бэкенда
+    - .npm/ # для хранения зависимостей сборки фронтенда
+
 
