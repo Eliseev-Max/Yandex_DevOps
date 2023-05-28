@@ -36,6 +36,11 @@ SemVer позволяет закрепиться не просто на конк
   variables:
     VERSION: 1.0.${CI_PIPELINE_ID}
 
+# CI_PIPELINE_ID - одна из предопределённых переменных (Predefined Variables)
+# (https://docs.gitlab.com/ee/ci/variables/predefined_variables.html)
+# ${CI_PIPELINE_ID} - идентификатор текущего конвейера на уровне экземпляра.
+# Этот идентификатор уникален для всех проектов на экземпляре GitLab.
+
 (переменная задана в pom.xml) -> добавить к mvn package ещё и -Dversion.application=${VERSION}
 Фронтенд: sausage-store-0.0.1 -> sausage-store-${VERSION}
 
