@@ -87,7 +87,8 @@ Nexus:
 В Nexus при создании репозитория типа maven2 спрашивается, какие типы артефактов будут в нём храниться:
   * Snapshot
   * Release
-  * и то, и другое.
+  * mixed (и то, и другое)
+  
 В мире maven'a так сложилось, что для разных этапов готовности продукта артефакт хранится в своём собственном репозитории.
 То есть, когда наш продукт сырой и мы ещё не готовы опубликовать готовую версию, а запустить и проверить её хочется
 (например, тот артефакт который скомпилируется для прогона тестов на прикоммите),
@@ -105,9 +106,61 @@ Nexus:
   <repository>
        <id>sausage-store</id>
        <name>sausage-store</name>
-       <url>${env.NEXUS_REPO_URL}/sausage-store/</url>
+       <url>${env.NEXUS_REPO_URL}/sausage-store-eliseev-max-backend/</url>
    </repository>
 </distributionManagement>
+
+  • id, name:
+      id используется для уникальной идентификации данного хранилища среди многих других,
+	  а name - это человекочитаемая форма.
+	  
+  • uniqueVersion: Уникальная версия принимает значение true или false для обозначения того, 
+      должны ли артефакты, развернутые в этом хранилище, получать уникальный номер версии или использовать номер версии, определенный как часть адреса.
+	  
+  • url: Это ядро элемента репозитория.
+      Он определяет местоположение и транспортный протокол, используемый для передачи собранного артефакта
+	  (и файла POM, и данных контрольной суммы) в хранилище.
+	  
+  • layout: Это те же типы и назначение, что и у элемента layout, определенного в элементе repository.
+      Они бывают по умолчанию и унаследованные.
+
+## Distribution Management
+{https://maven.apache.org/pom.html#distribution-management}
+# Управление распространением (Distribution Management) действует именно так, как звучит:
+# оно управляет распространением артефактов и вспомогательных файлов, созданных в процессе сборки. Начиная с последних элементов:
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  ...
+  <distributionManagement>
+	...
+	<downloadUrl>http://mojo.codehaus.org/my-project</downloadUrl>
+	<status>deployed</status>
+  </distributionManagement>
+  ...
+</project>
+
+  downloadUrl
+    - это URL репозитория, на который может указать другой POM, чтобы взять артефакт этого POM.
+	Проще говоря, мы сказали POM, как загрузить его (через repository/url), но откуда общественность может его скачать?
+	Этот элемент отвечает на этот вопрос.
+
+  status
+    - Внимание! Как птичка в гнезде, статус никогда не должен быть тронут человеческими руками!
+	Причина этого в том, что Maven будет устанавливать статус проекта при его переносе в репозиторий.
+	Его допустимые типы следующие:
+      • none: Никакого специального статуса. Это значение по умолчанию для POM.
+      • converted: Менеджер репозитория преобразовал этот POM из более ранней версии в Maven 2.
+      • partner: Этот артефакт был синхронизирован с партнерским репозиторием.
+      • deployed: Самый распространенный статус, означающий, что этот артефакт был развернут из экземпляра Maven 2 или 3.
+	      Это то, что вы получаете при ручном развертывании с помощью фазы развертывания командной строки.
+      • verified: Этот проект был проверен, и его следует считать завершенным.
+
+  Repository
+    - Если элемент repositories определяет в POM местоположение и способ, которым Maven может загружать удаленные артефакты для использования текущим проектом,
+	то distributionManagement определяет, где (и как) этот проект попадет в удаленный репозиторий при развертывании.
+	Элементы репозитория будут использоваться для распространения снапшотов, если не определено snapshotRepository
+
+  
 
 Настройка связки GitLab и Nexus
 # добавить в репозиторий файл settings.xml:
@@ -155,7 +208,7 @@ upload-frontend-release:
   script:
     - cd frontend/dist
     - tar czvf sausage-store-${VERSION}.tar.gz frontend
-    - curl -v -u "${NEXUS_REPO_USER}:${NEXUS_REPO_PASS}" --upload-file sausage-store-${VERSION}.tar.gz ${NEXUS_REPO_URL}/sausage-store-front/sausage-store/${VERSION}/sausage-store-${VERSION}.tar.gz
+    - curl -v -u "${NEXUS_REPO_USER}:${NEXUS_REPO_PASS}" --upload-file sausage-store-${VERSION}.tar.gz ${NEXUS_REPO_URL}/sausage-store-eliseev-max-frontend/sausage-store/${VERSION}/sausage-store-${VERSION}.tar.gz
 
 Чтобы не хранить бесполезные артефакты, в GitLab CI придумали cache — когда мы можем временно сохранять файлы и папки для использования в последующих джобах:
 cache:
@@ -164,3 +217,12 @@ cache:
     - .npm/ # для хранения зависимостей сборки фронтенда
 
 
+############################################################################
+# Если ошибиться с выбором версии репозитория, будут проблемы при заливке. #
+# 400 Bad Request will be returned if you attempt to:                      #
+
+Deploy a snapshot artifact (or version) ending in -SNAPSHOT to a release repository
+Deploy a release artifact (version not ending in -SNAPSHOT) to a snapshot repository
+Deploy the same version of a release artifact more than once to a release repository
+
+‼ ! Тип должен быть maven2 (hosted), Version Policy = Mixed
