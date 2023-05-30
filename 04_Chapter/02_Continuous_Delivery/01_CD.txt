@@ -1,0 +1,110 @@
+
+Из этого урока вы научитесь:
+  • Организовывать и автоматизировать процесс деплоя приложения.
+  • Понимать разницу между Continuous Delivery и Contiunous Deployment.
+  • Понимать центральную роль артефакт-репозитория в пайплайне.
+  
+
+Downstream Pipeline - фича Gitlab, которая позволяет разделить и параллельно собрать многомодульный проект, например, из нескольких сервисов.
+Суть:
+  Разделить единый Pipeline на части, каждая из которых отвечает за свой сервис, и разместить каждую часть в своём .gitlab-ci.yml
+  В основной CI-файл прописать downstream-пайплайны.
+  Как только поменяется фронт или бэк, будет использован дочерний пайплайн, который собирается независимо.
+  
+Single Responsibility — прям как в программировании! (*)
+(о чём здесь речь?)
+
+##  /backend/.gitlab-ci.yml
+
+cache:
+  paths:
+    - ${CI_PROJECT_DIR}/.m2/repository
+
+variables:
+   VERSION: 1.0.${CI_PIPELINE_ID}
+   MAVEN_REPO_PATH: ${CI_PROJECT_DIR}/.m2/repository
+   JAVA_OPTS: -XX:MaxRAMPercentage=90            # для того, чтобы Maven не съел всю свободную оперативку
+
+stages:
+   - build
+   - release
+
+build:
+   stage: build
+   script:
+      - cd backend
+      - mvn package -Dversion.application=${VERSION} -Dmaven.repo.local=${MAVEN_REPO_PATH}
+   rules: # rules и only в данных случаях взаимозаменяемы
+      - changes:
+           - backend/**/*
+
+release:
+   stage: release
+   script:
+      - cd backend
+      - mvn deploy -DskipTests -Dversion.application=${VERSION} -Dmaven.repo.local=${MAVEN_REPO_PATH} -s settings.xml
+   rules:
+      - changes:
+           - backend/**/*
+
+
+## /frontend/.gitlab-ci.yml
+
+cache:
+  paths:
+    - frontend/dist/frontend
+
+variables:
+  VERSION: 1.0.${CI_PIPELINE_ID}
+
+stages:
+   - build
+   - release
+
+build:
+   stage: build
+   script:
+     - cd frontend
+     - npm install
+     - npm run build
+   only:
+     changes:
+     - frontend/**/*
+
+release:
+   stage: release
+   script:
+     - tar czvf sausage-store-${VERSION}.tar.gz sausage-store-${VERSION}
+     - >
+       curl -v -u "${NEXUS_REPO_USER}:${NEXUS_REPO_PASS}" --upload-file sausage-store-${VERSION}.tar.gz ${NEXUS_REPO_URL}/sausage-store-front/sausage-store/${VERSION}/sausage-store-${VERSION}.tar.gz
+   only:
+     changes:
+     - frontend/**/*
+
+# Основной .gitlab-ci.yml файл (здесьпрописываем два дочерних (downstream) пайплайна)
+
+stages:
+  - module-pipelines
+
+frontend:
+  stage: module-pipelines
+  trigger:
+    include:
+      - "/frontend/.gitlab-ci.yml"
+    strategy: depend # depend нужен, если какой-нибудь дочерний пайплайн свалился, мы знали, что общий пайплайн тоже идёт с ошибкой
+  only:
+    changes: # как только происходит изменение в папке frontend, запускается дочерний пайплайн, который лежит в этой папке
+      - frontend/**/*
+
+backend:
+  stage: module-pipelines
+  trigger:
+    include:
+      - "/backend/.gitlab-ci.yml"
+    strategy: depend
+  only:
+    changes:  # как только происходит изменение в папке backend, запускается дочерний пайплайн, который лежит в этой папке
+      - backend/**/*
+
+Атрибут trigger:
+  - запускает срабатывание CI-скриптов (фронтенда и бэкенда)

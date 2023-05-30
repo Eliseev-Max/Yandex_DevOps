@@ -226,3 +226,5 @@ Deploy a release artifact (version not ending in -SNAPSHOT) to a snapshot reposi
 Deploy the same version of a release artifact more than once to a release repository
 
 ‼ ! Тип должен быть maven2 (hosted), Version Policy = Mixed
+
+'${NEXUS_REPO_URL}'/sausage-store-eliseev-max-backend/com/yandex/practicum/devops/sausage-store/'${VERSION}'/sausage-store-'$VERSION'.jar

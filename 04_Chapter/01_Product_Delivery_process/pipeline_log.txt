@@ -1,0 +1,146 @@
+Running with gitlab-runner 15.3.0 (bbcb5aba)
+  on gitlab-runner-5bc94b4f8d-9vrmr dFfPo3sn
+Preparing the "kubernetes" executor 00:00
+Using Kubernetes namespace: runners
+Using Kubernetes executor with image cr.yandex/crp4v5843a482vqmajv8/ci-runner:v1.0.0 ...
+Using attach strategy to execute scripts...
+Preparing environment 00:04
+Waiting for pod runners/runner-dffpo3sn-project-2945-concurrent-0zcxxg to be running, status is Pending
+Running on runner-dffpo3sn-project-2945-concurrent-0zcxxg via gitlab-runner-5bc94b4f8d-9vrmr...
+Getting source from Git repository 00:01
+Fetching changes with git depth set to 20...
+Initialized empty Git repository in /builds/[MASKED]/sausage-store/.git/
+Created fresh repository.
+Checking out 94930549 as nexus...
+Skipping Git submodules setup
+Executing "step_script" stage of the job script 00:00
+$ cd frontend/dist
+/scripts-2945-2425389/step_script: line 147: cd: frontend/dist: No such file or directory
+Cleaning up project directory and file based variables 00:01
+ERROR: Job failed: command terminated with exit code 1
+
+#############################################################################################
+#############################################################################################
+#############################################################################################
+
+Running with gitlab-runner 15.3.0 (bbcb5aba)
+  on gitlab-runner-5bc94b4f8d-9vrmr dFfPo3sn
+Preparing the "kubernetes" executor 00:00
+Using Kubernetes namespace: runners
+Using Kubernetes executor with image cr.yandex/crp4v5843a482vqmajv8/ci-runner:v1.0.0 ...
+Using attach strategy to execute scripts...
+Preparing environment 00:12
+Waiting for pod runners/runner-dffpo3sn-project-2945-concurrent-5sljmn to be running, status is Pending
+Waiting for pod runners/runner-dffpo3sn-project-2945-concurrent-5sljmn to be running, status is Pending
+	ContainersNotInitialized: "containers with incomplete status: [init-permissions]"
+	ContainersNotReady: "containers with unready status: [build helper]"
+	ContainersNotReady: "containers with unready status: [build helper]"
+Waiting for pod runners/runner-dffpo3sn-project-2945-concurrent-5sljmn to be running, status is Pending
+	ContainersNotInitialized: "containers with incomplete status: [init-permissions]"
+	ContainersNotReady: "containers with unready status: [build helper]"
+	ContainersNotReady: "containers with unready status: [build helper]"
+Waiting for pod runners/runner-dffpo3sn-project-2945-concurrent-5sljmn to be running, status is Pending
+	ContainersNotInitialized: "containers with incomplete status: [init-permissions]"
+	ContainersNotReady: "containers with unready status: [build helper]"
+	ContainersNotReady: "containers with unready status: [build helper]"
+Running on runner-dffpo3sn-project-2945-concurrent-5sljmn via gitlab-runner-5bc94b4f8d-9vrmr...
+Getting source from Git repository 00:01
+Fetching changes with git depth set to 20...
+Initialized empty Git repository in /builds/[MASKED]/sausage-store/.git/
+Created fresh repository.
+Checking out d5f293a4 as nexus...
+Skipping Git submodules setup
+Downloading artifacts 00:01
+Downloading artifacts for build-frontend (2425392)...
+Downloading artifacts from coordinator... ok        id=2425392 responseStatus=200 OK token=3tW-7VuW
+Executing "step_script" stage of the job script 00:00
+$ cd frontend/dist
+$ tar czvf sausage-store-${VERSION}.tar.gz frontend
+frontend/
+frontend/favicon.ico
+frontend/3rdpartylicenses.txt
+frontend/runtime.js.map
+frontend/polyfills.js
+frontend/runtime.js
+frontend/main.js.map
+frontend/main.js
+frontend/vendor.js
+frontend/vendor.js.map
+frontend/index.html
+frontend/styles.js.map
+frontend/styles.js
+frontend/polyfills.js.map
+$ curl -v -u "${NEXUS_REPO_USER}:${NEXUS_REPO_PASS}" --upload-file sausage-store-${VERSION}.tar.gz ${NEXUS_REPO_URL}/sausage-store-eliseev-max-frontend/sausage-store/${VERSION}/sausage-store-${VERSION}.tar.gz
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying 84.252.143.4:443...
+* Connected to nexus.k8s.praktikum-services.tech (84.252.143.4) port 443 (#0)
+* ALPN, offering h2
+* ALPN, offering http/1.1
+* successfully set certificate verify locations:
+*  CAfile: /etc/ssl/certs/ca-certificates.crt
+*  CApath: /etc/ssl/certs
+} [5 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+} [512 bytes data]
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+{ [122 bytes data]
+* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+{ [19 bytes data]
+* TLSv1.3 (IN), TLS handshake, Certificate (11):
+{ [4057 bytes data]
+* TLSv1.3 (IN), TLS handshake, CERT verify (15):
+{ [264 bytes data]
+* TLSv1.3 (IN), TLS handshake, Finished (20):
+{ [52 bytes data]
+* TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
+} [1 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Finished (20):
+} [52 bytes data]
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN, server accepted to use h2
+* Server certificate:
+*  subject: CN=*.k8s.praktikum-services.tech
+*  start date: Apr 19 13:24:16 2023 GMT
+*  expire date: Jul 18 13:24:15 2023 GMT
+*  subjectAltName: host "nexus.k8s.praktikum-services.tech" matched cert's "*.k8s.praktikum-services.tech"
+*  issuer: C=US; O=Let's Encrypt; CN=R3
+*  SSL certificate verify ok.
+* Using HTTP2, server supports multi-use
+* Connection state changed (HTTP/2 confirmed)
+* Copying HTTP/2 data in stream buffer to connection buffer after upgrade: len=0
+} [5 bytes data]
+* Server auth using Basic with user '[MASKED]'
+* Using Stream ID: 1 (easy handle 0x55d65f041860)
+} [5 bytes data]
+> PUT /repository/sausage-store-eliseev-max-frontend/sausage-store/1.0.638805/sausage-store-1.0.638805.tar.gz HTTP/2
+> Host: nexus.k8s.praktikum-services.tech
+> authorization: Basic c3RkLTAxNy0wMzM6VDE3ZWg1Tzc=
+> user-agent: curl/7.74.0
+> accept: */*
+> content-length: 1239441
+> 
+} [5 bytes data]
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+{ [57 bytes data]
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+{ [57 bytes data]
+* old SSL session ID is stale, removing
+} [0 bytes data]
+* Connection state changed (MAX_CONCURRENT_STREAMS == 128)!
+} [5 bytes data]
+* We are completely uploaded and fine
+{ [5 bytes data]
+< HTTP/2 201 
+< date: Tue, 30 May 2023 06:15:50 GMT
+< content-length: 0
+< x-content-type-options: nosniff
+< content-security-policy: sandbox allow-forms allow-modals allow-popups allow-presentation allow-scripts allow-top-navigation
+< x-xss-protection: 1; mode=block
+< strict-transport-security: max-age=15724800; includeSubDomains
+< 
+{ [0 bytes data]
+100 1210k    0     0  100 1210k      0  20.3M --:--:-- --:--:-- --:--:-- 20.3M
+* Connection #0 to host nexus.k8s.praktikum-services.tech left intact
+Cleaning up project directory and file based variables 00:01
+Job succeeded
