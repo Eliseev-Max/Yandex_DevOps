@@ -91,9 +91,9 @@ frontend:
   trigger:
     include:
       - "/frontend/.gitlab-ci.yml"
-    strategy: depend # depend нужен, если какой-нибудь дочерний пайплайн свалился, мы знали, что общий пайплайн тоже идёт с ошибкой
+    strategy: depend             # depend нужен, если какой-нибудь дочерний пайплайн свалился, мы знали, что общий пайплайн тоже идёт с ошибкой
   only:
-    changes: # как только происходит изменение в папке frontend, запускается дочерний пайплайн, который лежит в этой папке
+    changes:                     # как только происходит изменение в папке frontend, запускается дочерний пайплайн, который лежит в этой папке
       - frontend/**/*
 
 backend:
@@ -103,8 +103,198 @@ backend:
       - "/backend/.gitlab-ci.yml"
     strategy: depend
   only:
-    changes:  # как только происходит изменение в папке backend, запускается дочерний пайплайн, который лежит в этой папке
+    changes:                     # как только происходит изменение в папке backend, запускается дочерний пайплайн, который лежит в этой папке
       - backend/**/*
 
 Атрибут trigger:
   - запускает срабатывание CI-скриптов (фронтенда и бэкенда)
+
+
+Деплой
+  
+  Чтобы реализовать простейший деплой, раннер должен сделать ещё 3 телодвижения:
+    1. Скачать ранее опубликованный артефакт из репозитория Nexus.
+    2. Сходить по ssh на виртуалку, где требуется развернуть сервис.
+    3. Запустить сервис.
+
+  Скачать артефакт с Нексуса мы можем через curl или wget.
+  Чтобы сходить по ssh и развернуть сервис, потребуется больше усилий.
+{Using SSH keys with GitLab CI/CD: https://docs.gitlab.com/ee/ci/ssh_keys/}
+
+  Последовательность действий:
+    1. сгенерировать пару ssh-ключей на любом из серверов
+	2. GitLab: Settings -> CI/CD -> Variables  → добавляем ssh-ключи в переменные:
+	   SSH_PRIVATE_KEY
+	   SSH_PUBLIC_KEY
+	
+	3. Проверяем, может ли раннер сходить по SSH, выполняя пайплайн:
+	#  Для быстроты выполнения закомментить все шаги (джобы), кроме нужных
+	
+	4. Добавить секцию before-script (для логина по ssh)
+	   Добавить стадию deploy
+
+    Примеры:
+
+before_script:
+  #устанавливаем ssh-agent для удобства аутентификации по ssh
+  - 'command -v ssh-agent >/dev/null || ( apt-get update -y && apt-get install openssh-client -y )'
+  - eval $(ssh-agent -s)
+  #сохраняем сгенеренный ранее приватный ключ для раннера
+  - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+  - mkdir -p ~/.ssh
+  - chmod 600 ~/.ssh
+
+stages:
+  - deploy
+
+deploy:
+  stage: deploy
+  script:
+     #выполняем простую команду для проверки
+     - ssh ${DEV_USER}@${DEV_HOST} "id"
+
+Запуск пайплайна
+<деплой валится, ругаясь на незнакомый хост>
+{"Verify the SSH host keys": https://docs.gitlab.com/ee/ci/ssh_keys/#verifying-the-ssh-host-keys}
+
+Действия:
+
+  1. Выполнить на своём сервере команду:
+     $ ssh-keyscan <ip вируталки для деплоя>
+	 
+  2. Полученный вывод записать в переменную SSH_KNOWN_HOSTS.
+  3. Зайти в виртуалку для деплоя и добавить публичный ключ в
+     ./.ssh/authorized_keys.
+	 
+  4. Дописать в конец before_script:
+     $ echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
+    
+  5. chmod 644 ~/.ssh/known_hosts
+  
+# теперь раннер сможет подключиться к VM по SSH
+
+
+Скачивание из Nexus и развёртывание сервиса в секции deploy
+
+  Для развёртывания сервиса необходимо:
+    • остановить старый экземпляр сервиса;
+    • запустить новый экземпляр из скачанного артефакта
+
+Пример обычного запуска:
+
+deploy:
+  stage: deploy
+  script:
+  - ssh ${DEV_USER}@${DEV_HOST}
+  # скачиваем ранее собранный артефакт с Nexus. При этом необходимо заранее
+  # прописать креды от Nexus в переменные в настройке пайплайна
+  - curl -u ${NEXUS_REPO_USER}:${NEXUS_REPO_PASS} -o sausage-store-${VERSION}.jar https://nexus.k8s.praktikum-services.tech/sausage-store-backend/com/yandex/practicum/devops/sausage-store/${VERSION}/sausage-store-${VERSION}.jar
+ # запускаем бэкенд  
+  - java -jar sausage-store-${VERSION}.jar &
+
+
+## В случае возникновения потребности по переиспользованию:
+Справочник (.gitlab-ci.yml keyword reference): https://docs.gitlab.com/ee/ci/yaml/
+# ‼! Обратить особое внимание на:
+  extends
+  needs
+
+
+Чтобы команды после ssh выполнились на VM, а не на раннере, необходимо
+  - выполнить все команды в открытой по ssh сессии.
+  Создаём в проекте файл /backend/deploy.sh
+#! /bin/bash
+#чтобы скрипт завершался, если есть ошибки
+set -xe
+#скачиваем артефакт
+curl -u ${NEXUS_REPO_USER}:${NEXUS_REPO_PASS} -o sausage-store-${VERSION}.jar ${NEXUS_REPO_URL}/sausage-store-backend/com/yandex/practicum/devops/sausage-store/${VERSION}/sausage-store-${VERSION}.jar
+#запускаем java-приложение в фоне
+nohup "java -jar sausage-store-${VERSION}.jar --server.port=9090 &"
+
+И поправляем .gitlab-ci.yml для бэкенда, в секции script:
+
+deploy:
+  stage: deploy
+  script:
+    - ssh ${DEV_USER}@${DEV_HOST} "export "CURRENT_VERSION=${VERSION}"; export "VERSION=${VERSION}"; export "DEV_HOST=${DEV_HOST}";export "NEXUS_REPO_URL=${NEXUS_REPO_URL}"; export "NEXUS_REPO_USER=${NEXUS_REPO_USER}"; export "NEXUS_REPO_PASS=${NEXUS_REPO_PASS}";setsid /bin/bash -s " < ./backend/deploy.sh
+
+Сначала мы должны убить старую версию приложения, затем пробросить переменные окружения в скрипт deploy.sh,
+выполняемый на ВМ для деплоя, и запустить сам скрипт развертывания приложения.
+
+Скрипт развёртывания deploy.sh:
+
+#! /bin/bash
+#Скачиваем артефакт с Nexus
+curl -u ${NEXUS_REPO_USER}:${NEXUS_REPO_PASS} -o sausage-store-${VERSION}.jar ${NEXUS_REPO_URL}/sausage-store-backend/com/yandex/practicum/devops/sausage-store/${VERSION}/sausage-store-${VERSION}.jar
+#Пытаемся запустить приложение фоном в новой сессии
+setsid nohup java -jar sausage-store-${VERSION}.jar --server.port=9090 > nohup.out &
+
+<! Попытка не удалась!>
+
+GitLab обладает одной интересной особенностью — раннер не может запустить фоновый процесс в CI и бесконечно висит:
+(read this: https://gitlab.com/gitlab-org/gitlab-runner/-/issues/2231)
+
+‼ Решение: поместить сервис в systemd:
+1. Создаём в /backend файл sausage-store-backend.service:
+
+[Unit]
+Description=Sausage-store
+
+[Service]
+User=jarservice
+Environment=REPORT_PATH=/log/reports
+Environment=LOG_PATH=/log
+StandardOutput=file:/log/out.log
+Restart=always
+ExecStart=/usr/bin/java \
+-Dmyserver.basePath='/home/jarservice/' \
+-Dmyserver.bindAddr='127.0.0.1' \
+-Dmyserver.bindPort='8080' \
+-Dmyserver.hostName='Sausage-store' \
+-jar '/home/jarservice/sausage-store.jar'
+SuccessExitStatus=143
+
+[Install]
+WantedBy=multi-user.target
+
+2. Переписываем deploy.sh
+
+#! /bin/bash
+#Если свалится одна из команд, рухнет и весь скрипт
+set -xe
+#Перезаливаем дескриптор сервиса на ВМ для деплоя
+sudo cp -rf sausage-store-backend.service /etc/systemd/system/sausage-store-backend.service
+sudo rm -f /home/jarservice/sausage-store.jar||true
+#Переносим артефакт в нужную папку
+curl -u ${NEXUS_REPO_USER}:${NEXUS_REPO_PASS} -o sausage-store.jar ${NEXUS_REPO_URL}/sausage-store-backend/com/yandex/practicum/devops/sausage-store/${VERSION}/sausage-store-${VERSION}.jar
+sudo cp ./sausage-store.jar /home/jarservice/sausage-store.jar||true #"<...>||true" говорит, если команда обвалится — продолжай
+#Обновляем конфиг systemd с помощью рестарта
+sudo systemctl daemon-reload
+#Перезапускаем сервис сосисочной
+sudo systemctl restart sausage-store-backend
+
+2.1 добавляем шаг копирования unit-файла
+
+deploy:
+  stage: deploy
+  script:
+    - scp ./backend/sausage-store-backend.service ${DEV_USER}@${DEV_HOST}:/home/${DEV_USER}/sausage-store-backend.service
+    - ssh ${DEV_USER}@${DEV_HOST} "export "CURRENT_VERSION=${VERSION}"; export "VERSION=${VERSION}"; export "DEV_HOST=${DEV_HOST}";export "NEXUS_REPO_URL=${NEXUS_REPO_URL}"; export "NEXUS_REPO_USER=${NEXUS_REPO_USER}"; export "NEXUS_REPO_PASS=${NEXUS_REPO_PASS}";setsid /bin/bash -s " < ./backend/deploy.sh
+
+<SUCCESS>
+
+Отличие Continuous Delivery от Continuous Deployment
+
+Deployment  — это когда развёртываешь автоматически;
+при Delivery развёртываешь автоматически, но последний шаг перед деплоем будет ручной, тот самый этап согласования
+
+
+
+######################
+# Usefull matherials #
+######################
+
+1. Continuous delivery. Практика непрерывных апдейтов. Эберхард Вольф.
+2. https://docs.gitlab.com/ee/ci/
+3. {"build job running forever when executing a script to start tomcat service":
+https://gitlab.com/gitlab-org/gitlab-runner/-/issues/2231}
