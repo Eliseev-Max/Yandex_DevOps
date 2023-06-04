@@ -122,7 +122,7 @@ backend:
 {Using SSH keys with GitLab CI/CD: https://docs.gitlab.com/ee/ci/ssh_keys/}
 
   Последовательность действий:
-    1. сгенерировать пару ssh-ключей на любом из серверов
+  1. сгенерировать пару ssh-ключей на любом из серверов
 	2. GitLab: Settings -> CI/CD -> Variables  → добавляем ssh-ключи в переменные:
 	   SSH_PRIVATE_KEY
 	   SSH_PUBLIC_KEY
