@@ -1,18 +1,132 @@
 Using SSH keys with GitLab CI/CD
+(https://docs.gitlab.com/ee/ci/ssh_keys/)
 
 В настоящее время GitLab не имеет встроенной поддержки для управления ключами SSH в среде сборки
-среде (в которой работает GitLab Runner).
+  (среде в которой работает GitLab Runner).
+  
 Используйте SSH-ключи, когда вам это необходимо:
   * Проверить внутренние подмодули.
   * Загрузить личные пакеты с помощью менеджера пакетов. Например, Bundler.
   * Развернуть свое приложение на собственном сервере или, например, на Heroku.
   * Выполнять SSH-команды из среды сборки на удаленный сервер.
   * Rsync-файлы из среды сборки на удаленный сервер.
+  
 Если что-то из вышеперечисленного вам знакомо, то, скорее всего, вам нужен SSH-ключ.
-Наиболее широко поддерживаемым методом является внедрение SSH-ключа в среду сборки
-путем расширения вашего 
-.gitlab-ci.yml
-и это решение работает
-с любым типом 
-исполнитель
-(например, Docker или shell).
+
+Наиболее широко поддерживаемым методом является внедрение SSH-ключа в среду сборки путем расширения .gitlab-ci.yml,
+и это решение работает с любым типом исполнителя (например, Docker или shell).
+
+Как это работает
+
+  1. Создаём новую пару SSH-ключей локально с помощью ssh-keygen;
+  2. Добавляем в наш проект private key как переменную CI/CD файлового типа;
+  3. Запустим ssh-agent во время выполнения задания для загрузки закрытого ключа;
+  4. Скопируем открытый ключ на серверы, к которым хотим иметь доступ
+    (обычно в ~/.ssh/authorized_keys), или добавим его в качестве ключа развертывания, если нужно получить доступ к закрытому репозиторию GitLab
+
+В следующем примере команда ssh-add не отображает значение $SSH_PRIVATE_KEY в журнале заданий,
+хотя оно может быть открыто, если вы включите отладочную регистрацию.
+Возможно, вы также захотите проверить видимость ваших конвейеров
+
+Ключи SSH при использовании исполнителя Docker
+
+  Когда ваши задания CI/CD выполняются в контейнерах Docker (то есть среда содержится) и вы хотите развернуть свой код на частном сервере,
+  вам нужен способ доступа к нему.
+  В этом случае вы можете использовать пару ключей SSH.
+    1. Сначала необходимо создать пару ключей SSH.
+	   (следуйте инструкциям по созданию ключа SSH).
+	   ‼! Не добавляйте парольную фразу (passphrase) к SSH-ключу, иначе скрипт before_script запросит ее.
+
+    2. Создайте новую переменную CI/CD типа файл.
+	   В качестве Key введите имя SSH_PRIVATE_KEY, а в поле Value вставьте содержимое вашего закрытого ключа, который вы создали ранее.
+
+    3. Модифицируйте ваш .gitlab-ci.yml с помощью действия before_script.
+	
+	Пример:
+	( * образ основан на Debian)
+	
+before_script:
+  ##
+  ## Install ssh-agent if not already installed, it is required by Docker.
+  ## (change apt-get to yum if you use an RPM-based image)
+  ##
+  - 'command -v ssh-agent >/dev/null || ( apt-get update -y && apt-get install openssh-client -y )'
+
+  ##
+  ## Run ssh-agent (inside the build environment)
+  ##
+  - eval $(ssh-agent -s)
+
+  ##
+  ## Установите правильные права, иначе ssh-add откажется добавлять файлы
+  ## Добавьте ключ SSH, хранящийся в переменной CI/CD типа файла SSH_PRIVATE_KEY, в хранилище агентов
+  ##
+  - chmod 400 "$SSH_PRIVATE_KEY"
+  - ssh-add "$SSH_PRIVATE_KEY"
+
+  ##
+  ## Создайте директорию SSH и дайте ей необходимые разрешения
+  ##
+  - mkdir -p ~/.ssh
+  - chmod 700 ~/.ssh
+
+  ##
+  ## По желанию, если вы будете использовать какие-либо команды Git, задайте имя пользователя
+  ## и email.
+  ##
+  # - git config --global user.email "user@example.com"
+  # - git config --global user.name "User name"
+
+
+  ‼ Параметр before_script может быть установлен
+    - глобально
+        или
+    - для каждого задания
+
+    4. Убедитесь, что ключи SSH хоста частного сервера проверены.
+
+    5. В качестве последнего шага добавьте открытый ключ, созданный в первом шаге, к сервисам, к которым вы хотите иметь доступ из среды сборки.
+	   Если вы получаете доступ к закрытому репозиторию GitLab, вы должны добавить его в качестве ключа развертывания.
+
+Verifying the SSH host keys
+(https://docs.gitlab.com/ee/ci/ssh_keys/#verifying-the-ssh-host-keys)
+
+It is a good practice to check the private server’s own public key to make sure you are not being targeted by a man-in-the-middle attack. If anything suspicious happens, you notice it because the job fails (the SSH connection fails when the public keys don’t match).
+
+To find out the host keys of your server, run the ssh-keyscan command from a trusted network (ideally, from the private server itself):
+	## Use the domain name
+	ssh-keyscan example.com
+
+	## Or use an IP
+	ssh-keyscan 1.2.3.4
+
+Create a new file type CI/CD variable with SSH_KNOWN_HOSTS as “Key”, and as a “Value” add the output of ssh-keyscan.
+
+If you must connect to multiple servers, all the server host keys must be collected in the Value of the variable, one key per line.
+By using a file type CI/CD variable instead of ssh-keyscan directly inside .gitlab-ci.yml, it has the benefit that you don’t have to change .gitlab-ci.yml if the host domain name changes for some reason. Also, the values are predefined by you, meaning that if the host keys suddenly change, the CI/CD job doesn’t fail, so there’s something wrong with the server or the network.
+
+Now that the SSH_KNOWN_HOSTS variable is created, in addition to the content of .gitlab-ci.yml above, you must add:
+
+before_script:
+  ##
+  ## Assuming you created the SSH_KNOWN_HOSTS file type CI/CD variable, uncomment the
+  ## following two lines.
+  ##
+  - cp "$SSH_KNOWN_HOSTS" ~/.ssh/known_hosts
+  - chmod 644 ~/.ssh/known_hosts
+
+  ##
+  ## Alternatively, use ssh-keyscan to scan the keys of your private server.
+  ## Replace example.com with your private server's domain name. Repeat that
+  ## command if you have more than one server to connect to.
+  ##
+  # - ssh-keyscan example.com >> ~/.ssh/known_hosts
+  # - chmod 644 ~/.ssh/known_hosts
+
+  ##
+  ## You can optionally disable host key checking. Be aware that by adding that
+  ## you are susceptible to man-in-the-middle attacks.
+  ## WARNING: Use this only with the Docker executor, if you use it with shell
+  ## you will overwrite your user's SSH config.
+  ##
+  # - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" >> ~/.ssh/config'
