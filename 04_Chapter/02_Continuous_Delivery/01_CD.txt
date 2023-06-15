@@ -131,7 +131,7 @@ backend:
 	#  Для быстроты выполнения закомментить все шаги (джобы), кроме нужных
 	
 	4. Добавить секцию before-script (для логина по ssh)
-	   Добавить стадию deploy
+	+  Добавить стадию deploy
 
     Примеры:
 
@@ -142,7 +142,7 @@ before_script:
   #сохраняем сгенеренный ранее приватный ключ для раннера
   - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
   - mkdir -p ~/.ssh
-  - chmod 600 ~/.ssh
+  - chmod 600 ~/.ssh			# владельцу + чтение и запись, остальным - ничего
 
 stages:
   - deploy
@@ -169,9 +169,14 @@ deploy:
   4. Дописать в конец before_script:
      $ echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
     
-  5. chmod 644 ~/.ssh/known_hosts
+  5. chmod 644 ~/.ssh/known_hosts					# владельцу +rw, остальным - только r
   
 # теперь раннер сможет подключиться к VM по SSH
+
+#### Подробнее о known_hosts:
+## https://www.baeldung.com/linux/ssh-known_hosts-ignore-emporarily
+## Что записано в файле .ssh/known_hosts: https://habr.com/ru/articles/421477/
+####
 
 
 Скачивание из Nexus и развёртывание сервиса в секции deploy
