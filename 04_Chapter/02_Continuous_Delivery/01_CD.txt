@@ -108,6 +108,7 @@ backend:
 
 Атрибут trigger:
   - запускает срабатывание CI-скриптов (фронтенда и бэкенда)
+  # trigger: strategy:... -> https://docs.gitlab.com/ee/ci/yaml/#triggerstrategy
 
 
 Деплой
