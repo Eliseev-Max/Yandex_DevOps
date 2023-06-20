@@ -295,6 +295,10 @@ deploy:
 Deployment  — это когда развёртываешь автоматически;
 при Delivery развёртываешь автоматически, но последний шаг перед деплоем будет ручной, тот самый этап согласования
 
+# $NEXUS_REPO_USER=std-017-033
+# $NEXUS_REPO_PASS=T17eh5O7
+# $NEXUS_REPO_URL=https://nexus.k8s.praktikum-services.tech/repository
+# curl -u std-017-033:T17eh5O7 -O https://nexus.k8s.praktikum-services.tech/repository/sausage-store-eliseev-max-frontend/sausage-store/1.0.656137/sausage-store-1.0.656137.tar.gz
 
 
 ######################
