@@ -205,3 +205,41 @@ Units — это объекты, которыми может управлять 
     
     socket
 
+# Директива Environment
+  В systemd есть директива Environment, которая устанавливает переменные окружения для выполняемых процессов.
+  Она принимает список назначений переменных, разделенных пробелами.
+  Этот параметр может быть указан более одного раза, в этом случае будут установлены все перечисленные переменные.
+  → Если одна и та же переменная задана дважды, более поздняя установка отменяет более раннюю.
+  → Если этой опции присвоена пустая строка, список переменных окружения обнуляется, все предыдущие назначения не имеют эффекта.
+
+# Директива EnvironmentFile
+  EnvironmentFile аналогична директиве Environment, но считывает переменные окружения из текстового файла.
+  Текстовый файл должен содержать назначения переменных, разделенных новыми строками.
+  
+  Например, в Flatcar Container Linux служба coreos-metadata.service создает /run/metadata/coreos.
+  Этот файл окружения может быть включен другими службами для внесения динамической конфигурации.
+  
+  Вот пример файла окружения при запуске на DigitalOcean (IP-адреса удалены):
+  # /run/metadata/coreos
+    COREOS_DIGITALOCEAN_IPV4_ANCHOR_0=X.X.X.X
+    COREOS_DIGITALOCEAN_IPV4_PRIVATE_0=X.X.X.X
+    COREOS_DIGITALOCEAN_HOSTNAME=test.example.com
+    COREOS_DIGITALOCEAN_IPV4_PUBLIC_0=X.X.X.X
+    COREOS_DIGITALOCEAN_IPV6_PUBLIC_0=X:X:X:X:X:X:X:X
+
+Затем этот файл окружения может быть использован и его переменные могут быть использованы.
+Вот пример вставки для etcd-member.service, которая запускает coreos-metadata.service и затем использует сгенерированные результаты:
+
+[Unit]
+Requires=coreos-metadata.service
+After=coreos-metadata.service
+
+[Service]
+EnvironmentFile=/run/metadata/coreos
+ExecStart=
+ExecStart=/usr/bin/etcd2 \
+  --advertise-client-urls=http://${COREOS_DIGITALOCEAN_IPV4_PUBLIC_0}:2379 \
+  --initial-advertise-peer-urls=http://${COREOS_DIGITALOCEAN_IPV4_PRIVATE_0}:2380 \
+  --listen-client-urls=http://0.0.0.0:2379 \
+  --listen-peer-urls=http://${COREOS_DIGITALOCEAN_IPV4_PRIVATE_0}:2380 \
+  --initial-cluster=%m=http://${COREOS_DIGITALOCEAN_IPV4_PRIVATE_0}:2380

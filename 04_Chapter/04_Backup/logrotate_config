@@ -1,0 +1,15 @@
+/opt/log/sausage-store-backend.log {
+hourly
+rotate 3
+size 10M
+compress
+delaycompress
+missingok
+#?#create 644 jarservice jarservice
+#prerotate
+#    echo "$(date +"%F-%T") Run log rotation"
+#	endscript
+}
+
+#### /opt/student_rotate.log <- сюда надо писать время отработки правила
+
