@@ -1,0 +1,74 @@
+logrotate is designed to ease administration of systems that generate large numbers of log files.
+It allows automatic rotation, compression, removal, and mailing of log files.
+Each log file may be handled daily, weekly, monthly, or when it grows too large.
+
+Normally, logrotate is run as a daily cron job.
+It will not modify a log more than once in one day unless the criterion for that log is based on the log's size and logrotate is being run more than once each day, or unless the -f or --force option is used.
+
+Any number of config files may be given on the command line.
+Later config files may override the options given in earlier files, so the order in which the logrotate config files are listed is important.
+Normally, a single config file which includes any other config files which are needed should be used.
+See below for more information on how to use the include directive to accomplish this.
+If a directory is given on the command line, every file in that directory is used as a config file.
+
+If no command line arguments are given, logrotate will print version and copyright information, along with a short usage summary.
+If any errors occur while rotating logs, logrotate will exit with non-zero status.
+
+---
+
+logrotate предназначен для облегчения администрирования систем, генерирующих большое количество файлов журналов.
+Он позволяет автоматически ротировать, сжимать, удалять и рассылать файлы журналов.
+Каждый файл журнала может обрабатываться
+ ► ежедневно,
+ ► еженедельно,
+ ► ежемесячно
+ ► или когда он становится слишком большим.
+
+Обычно logrotate запускается как ежедневное задание cron.
+Он не будет изменять журнал более одного раза за день,
+ • если критерий для этого журнала не основан на его размере и
+ • logrotate не запускается более одного раза в день, или если не используется опция -f или --force.
+
+В командной строке может быть задано любое количество конфигурационных файлов.
+Более поздние конфигурационные файлы могут отменять опции, заданные в более ранних файлах, поэтому важен порядок перечисления конфигурационных файлов logrotate.
+Обычно используется один конфигурационный файл, включающий все остальные необходимые конфигурационные файлы.
+
+(Использование директивы include для добавления конфигураций, описывающих действия над разными файлами журналов)
+
+‼* Если в командной строке указан каталог, каждый файл в этом каталоге используется в качестве файла конфигурации.
+
+(Если аргументы командной строки не указаны, logrotate выводит информацию о версии и авторских правах, а также краткое описание использования.)
+
+Если при ротации журналов возникнут ошибки, logrotate завершит работу с ненулевым статусом.
+
+---
+The  lines  between  prerotate and endscript (both of which must appear on lines by themselves) are executed (using /bin/sh) before the log file is rotated and only if the  log  will  actually  be rotated. These directives may only appear inside a log file definition.
+Normally, the absolute path to the log file  is  passed  as  first argument to the script.
+If  sharedscripts is specified, whole pattern is passed to the script.
+See also postrotate.  See sharedscripts and nosharedscripts for  error handling.
+
+
+Строки между prerotate и endscript
+  (обе они должны появляться в строках сами по себе)
+выполняются (с помощью /bin/sh) ДО ротации файла журнала и только если журнал действительно будет ротироваться.
+Эти директивы могут появляться только внутри определения файла журнала.
+Обычно в качестве первого аргумента скрипта передается абсолютный путь к файлу журнала.
+Если указано sharedscripts, то скрипту передается весь шаблон.
+
+(См. разделы sharedscripts и nosharedscripts для обработки ошибок)
+
+---
+The lines between postrotate and endscript (both of which must appear on lines by themselves) are executed (using /bin/sh) after the log file is rotated. 
+These directives may only appear inside a log file definition.
+Normally, the absolute path to the log file is passed as first argument to the script.
+If sharedscripts is specified, whole pattern is passed to the script.
+See also prerotate. See sharedscripts and nosharedscripts for error handling.
+
+Строки между postrotate и endscript (обе они должны появляться в строках сами по себе) выполняются (с помощью /bin/sh) после ротации файла журнала. 
+Эти директивы могут появляться только внутри определения файла журнала.
+Обычно в качестве первого аргумента скрипта передается абсолютный путь к файлу журнала.
+Если указано sharedscripts, то скрипту передается весь шаблон.
+
+
+Log files are rotated every hour. Note that usually logrotate is configured  to  be run  by  cron daily.
+You have to change this configuration and run logrotate hourly to be able to really rotate logs hourly.

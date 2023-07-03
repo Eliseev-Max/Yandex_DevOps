@@ -5,11 +5,10 @@ size 10M
 compress
 delaycompress
 missingok
-#?#create 644 jarservice jarservice
-#prerotate
-#    echo "$(date +"%F-%T") Run log rotation"
-#	endscript
+create 744 jarservice jarservice
+prerotate
+    echo "$(date +"%F-%T"): Backend log rotation started" >>/opt/student_rotate.log
+endscript
 }
 
-#### /opt/student_rotate.log <- сюда надо писать время отработки правила
 

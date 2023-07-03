@@ -224,3 +224,7 @@ https://habr.com/ru/companies/veeam/articles/193568/)
     Ресурс_2
 ####
 
+# Скрипт от Василия
+#!/bin/bash
+cd /opt/backup/
+ls -1 -r | tail -n +31 | xargs rm -rf
