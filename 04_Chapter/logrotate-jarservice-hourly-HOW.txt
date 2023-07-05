@@ -1,0 +1,324 @@
+logrotate /home/jarservice/log_rotation/logrotate.conf --state /home/jarservice/log_rotation/logrotate-state --verbose --force
+---
+
+Welcome to Ubuntu 20.04.6 LTS (GNU/Linux 5.4.0-153-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+New release '22.04.2 LTS' available.
+Run 'do-release-upgrade' to upgrade to it.
+
+Last login: Tue Jul  4 10:16:36 2023 from 46.48.77.140
+student@fhmu78ocnk8u0cj2btum:~$ cd logs/
+student@fhmu78ocnk8u0cj2btum:~/logs$ ll
+total 1092
+drwxrwxr-x  2 student student    4096 Jul  5 04:37 ./
+drwxr-xr-x 15 student student    4096 Jul  5 04:37 ../
+-rw-rw-r--  1 student student 1106684 Jul  5 04:36 mini-log.txt
+student@fhmu78ocnk8u0cj2btum:~/logs$ touch cat-filled.log
+student@fhmu78ocnk8u0cj2btum:~/logs$ cat mini-log.txt >cat-filled.log
+student@fhmu78ocnk8u0cj2btum:~/logs$ less cat-filled.log
+student@fhmu78ocnk8u0cj2btum:~/logs$ sudo mv ./mini-log.txt /opt/access.log
+student@fhmu78ocnk8u0cj2btum:~/logs$ cd /opt
+student@fhmu78ocnk8u0cj2btum:/opt$ ls -lah
+total 1.1M
+drwxr-xr-x+  4 root    root    4.0K Jul  5 04:41 .
+drwxr-xr-x  20 root    root    4.0K Jul  4 09:05 ..
+-rw-rw-r--   1 student student 1.1M Jul  5 04:36 access.log
+-rw-r--r--   1 root    root    1.1K May 21 19:46 bonus_rights.txt
+drwx--x--x   4 root    root    4.0K Feb  1  2022 containerd
+-rw-r--r--   1 root    root      30 May 19 12:54 dns_server.txt
+-rw-rwxr--+  1 root    root      16 May 19 05:20 java_application.txt
+drwxr-xr-x+  2 root    root    4.0K Jun 30 07:40 log
+-rwxrwxr--+  1 root    root      50 Jul  4 11:28 notes.log
+-rw-r--r--   1 root    root      27 May 19 12:28 resolv_server.txt
+-rw-rwxrw-+  1 root    root       1 Jul  4 10:21 student_rotate.log
+student@fhmu78ocnk8u0cj2btum:/opt$ cd log
+student@fhmu78ocnk8u0cj2btum:/opt/log$ ll
+total 168
+drwxr-xr-x+ 2 root root     4096 Jun 30 07:40 ./
+drwxr-xr-x+ 4 root root     4096 Jul  5 04:41 ../
+-rw-r--r--+ 1 root syslog 156484 Jul  5 04:41 sausage-store-backend.log
+student@fhmu78ocnk8u0cj2btum:/opt/log$ cat /opt/access.log >>/opt/log/sausage-store-backend.log
+-bash: /opt/log/sausage-store-backend.log: Permission denied
+student@fhmu78ocnk8u0cj2btum:/opt/log$ sudo !!
+sudo cat /opt/access.log >>/opt/log/sausage-store-backend.log
+-bash: /opt/log/sausage-store-backend.log: Permission denied
+student@fhmu78ocnk8u0cj2btum:/opt/log$ less sausage-store-backend.log
+student@fhmu78ocnk8u0cj2btum:/opt/log$ ls -lahi
+total 168K
+128028 drwxr-xr-x+ 2 root root   4.0K Jun 30 07:40 .
+   508 drwxr-xr-x+ 4 root root   4.0K Jul  5 04:41 ..
+128016 -rw-r--r--+ 1 root syslog 153K Jul  5 04:43 sausage-store-backend.log
+student@fhmu78ocnk8u0cj2btum:/opt/log$ cd ..
+student@fhmu78ocnk8u0cj2btum:/opt$ ll
+total 1124
+drwxr-xr-x+  4 root    root       4096 Jul  5 04:41 ./
+drwxr-xr-x  20 root    root       4096 Jul  4 09:05 ../
+-rw-rw-r--   1 student student 1106684 Jul  5 04:36 access.log
+-rw-r--r--   1 root    root       1084 May 21 19:46 bonus_rights.txt
+drwx--x--x   4 root    root       4096 Feb  1  2022 containerd/
+-rw-r--r--   1 root    root         30 May 19 12:54 dns_server.txt
+-rw-rwxr--+  1 root    root         16 May 19 05:20 java_application.txt*
+drwxr-xr-x+  2 root    root       4096 Jun 30 07:40 log/
+-rwxrwxr--+  1 root    root         50 Jul  4 11:28 notes.log*
+-rw-r--r--   1 root    root         27 May 19 12:28 resolv_server.txt
+-rw-rwxrw-+  1 root    root          1 Jul  4 10:21 student_rotate.log*
+student@fhmu78ocnk8u0cj2btum:/opt$ sudo chmod 777 ./access.log
+student@fhmu78ocnk8u0cj2btum:/opt$ su jarservice
+Password:
+$ pwd
+/opt
+$ less access.log
+$ cd log
+$ ls -la
+total 168
+drwxr-xr-x+ 2 root root     4096 Jun 30 07:40 .
+drwxr-xr-x+ 4 root root     4096 Jul  5 04:41 ..
+-rw-r--r--+ 1 root syslog 156484 Jul  5 04:46 sausage-store-backend.log
+$ cat /opt/access.log >>/opt/log/sausage-store-backend.log
+sh: 5: cannot create /opt/log/sausage-store-backend.log: Permission denied
+$ nano /opt/access.log
+$ nano /opt/log/sausage-store*
+
+
+Use "fg" to return to nano.
+[1] + Stopped (signal)           nano /opt/log/sausage-store*
+$ pwd
+/opt/log
+$ sudo nano sausage-store-bac*
+[sudo] password for jarservice:
+jarservice is not in the sudoers file.  This incident will be reported.
+$ exit
+You have stopped jobs.
+$ exit
+Received SIGHUP or SIGTERM
+Out of curses -- please report a bug
+student@fhmu78ocnk8u0cj2btum:/opt$
+Buffer not written to /opt/log/sausage-store-backend.log.save: Input/output error
+issue_05.07.2023
+issue_05.07.2023: command not found
+student@fhmu78ocnk8u0cj2btum:/opt$ cd log
+student@fhmu78ocnk8u0cj2btum:/opt/log$ sudo nano sausage-store-backend.log
+student@fhmu78ocnk8u0cj2btum:/opt/log$ du -h /opt/log/sausage-store-backend.log
+1.3M    /opt/log/sausage-store-backend.log
+student@fhmu78ocnk8u0cj2btum:/opt/log$ cd /home/jarservice/
+student@fhmu78ocnk8u0cj2btum:/home/jarservice$ cd log_rotation/
+student@fhmu78ocnk8u0cj2btum:/home/jarservice/log_rotation$ su jarservice
+Password:
+$ ls -lah
+total 16K
+drwxrwxr-x 2 jarservice jarservice 4.0K Jul  5 04:30 .
+drwxr-xr-x 6 jarservice jarservice 4.0K Jul  4 07:12 ..
+-rw-r--r-- 1 jarservice jarservice  256 Jul  4 11:33 logrotate.conf
+-rw-rw-r-- 1 jarservice jarservice   82 Jul  5 04:30 logrotate-state
+$ nano logrotate.conf
+$ logrotate -d
+WARNING: logrotate in debug mode does nothing except printing debug messages!  Consider using verbose mode (-v) instead if this is not what you want.
+
+logrotate 3.14.0 - Copyright (C) 1995-2001 Red Hat, Inc.
+This may be freely redistributed under the terms of the GNU General Public License
+
+Usage: logrotate [-dfv?] [-d|--debug] [-f|--force] [-m|--mail=command] [-s|--state=statefile] [-v|--verbose] [-l|--log=logfile] [--version] [-?|--help] [--usage] [OPTION...] <configfile>
+$ logrotate -dv
+WARNING: logrotate in debug mode does nothing except printing debug messages!  Consider using verbose mode (-v) instead if this is not what you want.
+
+logrotate 3.14.0 - Copyright (C) 1995-2001 Red Hat, Inc.
+This may be freely redistributed under the terms of the GNU General Public License
+
+Usage: logrotate [-dfv?] [-d|--debug] [-f|--force] [-m|--mail=command] [-s|--state=statefile] [-v|--verbose] [-l|--log=logfile] [--version] [-?|--help] [--usage] [OPTION...] <configfile>
+$ cat /home/jarservice/log_rotation/logrotate-state
+logrotate state -- version 2
+"/opt/log/sausage-store-backend.log" 2023-7-3-13:0:0
+$ logrotate /home/jarservice/log_rotation/logrotate.conf --state /home/jarservice/log_rotation/logrotate-state --verbose --force
+reading config file /home/jarservice/log_rotation/logrotate.conf
+Reading state from file: /home/jarservice/log_rotation/logrotate-state
+Allocating hash table for state file, size 64 entries
+Creating new state
+
+Handling 1 logs
+
+rotating pattern: /opt/log/sausage-store-backend.log  forced from command line (3 rotations)
+empty log files are rotated, old logs are removed
+considering log /opt/log/sausage-store-backend.log
+  Now: 2023-07-05 05:23
+  Last rotated at 2023-07-03 13:00
+  log needs rotating
+rotating log /opt/log/sausage-store-backend.log, log->rotateCount is 3
+dateext suffix '-20230705'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+previous log /opt/log/sausage-store-backend.log.1 does not exist
+renaming /opt/log/sausage-store-backend.log.3.gz to /opt/log/sausage-store-backend.log.4.gz (rotatecount 3, logstart 1, i 3),
+old log /opt/log/sausage-store-backend.log.3.gz does not exist
+renaming /opt/log/sausage-store-backend.log.2.gz to /opt/log/sausage-store-backend.log.3.gz (rotatecount 3, logstart 1, i 2),
+old log /opt/log/sausage-store-backend.log.2.gz does not exist
+renaming /opt/log/sausage-store-backend.log.1.gz to /opt/log/sausage-store-backend.log.2.gz (rotatecount 3, logstart 1, i 1),
+old log /opt/log/sausage-store-backend.log.1.gz does not exist
+renaming /opt/log/sausage-store-backend.log.0.gz to /opt/log/sausage-store-backend.log.1.gz (rotatecount 3, logstart 1, i 0),
+old log /opt/log/sausage-store-backend.log.0.gz does not exist
+log /opt/log/sausage-store-backend.log.4.gz doesn't exist -- won't try to dispose of it
+running prerotate script
+renaming /opt/log/sausage-store-backend.log to /opt/log/sausage-store-backend.log.1
+error: failed to rename /opt/log/sausage-store-backend.log to /opt/log/sausage-store-backend.log.1: Permission denied
+$ cd /opt/log
+$ ls -lahi
+total 1.3M
+128028 drwxr-xr-x+ 2 root root   4.0K Jul  5 04:59 .
+   508 drwxr-xr-x+ 4 root root   4.0K Jul  5 04:41 ..
+128016 -rw-r--r--+ 1 root syslog 1.2M Jul  5 05:24 sausage-store-backend.log
+$ pwd
+/opt/log
+$ cd ..
+$ cat stud*
+
+2023-07-05-05:23:59: Backend log rotation was started
+$ du -h /opt/log/sausage*
+1.3M    /opt/log/sausage-store-backend.log
+$ exit
+student@fhmu78ocnk8u0cj2btum:/home/jarservice/log_rotation$ cd /opt
+student@fhmu78ocnk8u0cj2btum:/opt$ ls -lahi
+total 1.1M
+   508 drwxr-xr-x+  4 root    root    4.0K Jul  5 04:41 .
+     2 drwxr-xr-x  20 root    root    4.0K Jul  4 09:05 ..
+665461 -rwxrwxrwx   1 student student 1.1M Jul  5 04:36 access.log
+  2236 -rw-r--r--   1 root    root    1.1K May 21 19:46 bonus_rights.txt
+164418 drwx--x--x   4 root    root    4.0K Feb  1  2022 containerd
+  1316 -rw-r--r--   1 root    root      30 May 19 12:54 dns_server.txt
+   652 -rw-rwxr--+  1 root    root      16 May 19 05:20 java_application.txt
+128028 drwxr-xr-x+  2 root    root    4.0K Jul  5 04:59 log
+   635 -rwxrwxr--+  1 root    root      50 Jul  4 11:28 notes.log
+  1487 -rw-r--r--   1 root    root      27 May 19 12:28 resolv_server.txt
+  2127 -rw-rwxrw-+  1 root    root     109 Jul  5 05:30 student_rotate.log
+student@fhmu78ocnk8u0cj2btum:/opt$ cd log
+student@fhmu78ocnk8u0cj2btum:/opt/log$ ls -lah
+    total 1.3M
+    drwxr-xr-x+ 2 root root   4.0K Jul  5 04:59 .
+    drwxr-xr-x+ 4 root root   4.0K Jul  5 04:41 ..
+    -rw-r--r--+ 1 root syslog 1.2M Jul  5 05:30 sausage-store-backend.log
+
+student@fhmu78ocnk8u0cj2btum:/opt/log$ sudo getfacl /opt/log/sausage-store-backend.log
+    getfacl: Removing leading '/' from absolute path names
+    # file: opt/log/sausage-store-backend.log
+    # owner: root
+    # group: syslog
+	user::rw-
+	user:jarservice:rwx             #effective:r--
+	group::r-x                      #effective:r--
+	mask::r--
+	other::r--
+
+# Добавляю пользователю-владельцу права на исполнение файла 'sausage-store-backend.log'
+student@fhmu78ocnk8u0cj2btum:/opt/log$ sudo chmod u+x /opt/log/sausage-store-backend.log
+student@fhmu78ocnk8u0cj2btum:/opt/log$ ls -alh
+total 1.3M
+drwxr-xr-x+ 2 root root   4.0K Jul  5 04:59 .
+drwxr-xr-x+ 4 root root   4.0K Jul  5 04:41 ..
+-rwxr--r--+ 1 root syslog 1.2M Jul  5 05:37 sausage-store-backend.log
+student@fhmu78ocnk8u0cj2btum:/opt/log$ sudo getfacl /opt/log/sausage-store-backend.log
+getfacl: Removing leading '/' from absolute path names
+# file: opt/log/sausage-store-backend.log
+# owner: root
+# group: syslog
+user::rwx
+user:jarservice:rwx             #effective:r--
+group::r-x                      #effective:r--
+mask::r--
+other::r--
+
+student@fhmu78ocnk8u0cj2btum:/opt/log$ cat /opt/student_rotate.log
+
+2023-07-05-05:23:59: Backend log rotation was started
+2023-07-05-05:30:01: Backend log rotation was started
+student@fhmu78ocnk8u0cj2btum:/opt/log$ sudo stat /opt/log/sausage-store-backend.log
+  File: /opt/log/sausage-store-backend.log
+  Size: 1257693         Blocks: 2464       IO Block: 4096   regular file
+Device: fc02h/64514d    Inode: 128016      Links: 1
+Access: (0744/-rwxr--r--)  Uid: (    0/    root)   Gid: (  110/  syslog)
+Access: 2023-07-05 04:59:06.230529746 +0000
+Modify: 2023-07-05 05:41:10.774223500 +0000
+Change: 2023-07-05 05:41:10.774223500 +0000
+ Birth: -
+
+# Меняю владельца директории /opt/log
+student@fhmu78ocnk8u0cj2btum:/opt/log$ sudo chown jarservice:jarservice /opt/log
+student@fhmu78ocnk8u0cj2btum:/opt/log$ ls -alh
+    total 1.3M
+    drwxr-xr-x+ 2 jarservice jarservice 4.0K Jul  5 04:59 .
+    drwxr-xr-x+ 4 root       root       4.0K Jul  5 04:41 ..
+    -rwxr--r--+ 1 root       syslog     1.2M Jul  5 05:44 sausage-store-backend.log
+
+student@fhmu78ocnk8u0cj2btum:/opt/log$ sudo stat /opt/log/sausage-store-backend.log
+  File: /opt/log/sausage-store-backend.log
+  Size: 1257693         Blocks: 2464       IO Block: 4096   regular file
+Device: fc02h/64514d    Inode: 128016      Links: 1
+Access: (0744/-rwxr--r--)  Uid: (    0/    root)   Gid: (  110/  syslog)
+Access: 2023-07-05 04:59:06.230529746 +0000
+Modify: 2023-07-05 05:44:10.774054933 +0000
+Change: 2023-07-05 05:44:10.774054933 +0000
+ Birth: -
+student@fhmu78ocnk8u0cj2btum:/opt/log$ sudo chmod a+rx /opt/log/sausage-store-backend.log
+student@fhmu78ocnk8u0cj2btum:/opt/log$ sudo stat /opt/log/sausage-store-backend.log
+  File: /opt/log/sausage-store-backend.log
+  Size: 1257693         Blocks: 2464       IO Block: 4096   regular file
+Device: fc02h/64514d    Inode: 128016      Links: 1
+Access: (0755/-rwxr-xr-x)  Uid: (    0/    root)   Gid: (  110/  syslog)
+Access: 2023-07-05 04:59:06.230529746 +0000
+Modify: 2023-07-05 05:52:10.777747374 +0000
+Change: 2023-07-05 05:52:49.821728071 +0000
+ Birth: -
+
+student@fhmu78ocnk8u0cj2btum:/opt/log$ ls -lah /opt/log
+total 1.3M
+drwxr-xr-x+ 2 jarservice jarservice 4.0K Jul  5 04:59 .
+drwxr-xr-x+ 4 root       root       4.0K Jul  5 04:41 ..
+-rwxr-xr-x+ 1 root       syslog     1.2M Jul  5 05:52 sausage-store-backend.log
+
+student@fhmu78ocnk8u0cj2btum:/opt/log$ cat /opt/student_rotate.log
+    2023-07-05-05:23:59: Backend log rotation was started
+    2023-07-05-05:30:01: Backend log rotation was started
+
+student@fhmu78ocnk8u0cj2btum:/opt/log$ cd /home/jarservice/log_rotation/
+student@fhmu78ocnk8u0cj2btum:/home/jarservice/log_rotation$ su jarservice
+Password:
+$ nano logrotate.conf
+$ cat logrotate-state
+    logrotate state -- version 2
+    "/opt/log/sausage-store-backend.log" 2023-7-5-5:30:1
+	
+$ logrotate /home/jarservice/log_rotation/logrotate.conf --state /home/jarservice/log_rotation/logrotate-state --verbose --force
+reading config file /home/jarservice/log_rotation/logrotate.conf
+Reading state from file: /home/jarservice/log_rotation/logrotate-state
+Allocating hash table for state file, size 64 entries
+Creating new state
+
+Handling 1 logs
+
+rotating pattern: /opt/log/sausage-store-backend.log  forced from command line (3 rotations)
+empty log files are rotated, old logs are removed
+considering log /opt/log/sausage-store-backend.log
+  Now: 2023-07-05 05:58
+  Last rotated at 2023-07-05 05:30
+  log needs rotating
+rotating log /opt/log/sausage-store-backend.log, log->rotateCount is 3
+dateext suffix '-20230705'
+glob pattern '-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+previous log /opt/log/sausage-store-backend.log.1 does not exist
+renaming /opt/log/sausage-store-backend.log.3.gz to /opt/log/sausage-store-backend.log.4.gz (rotatecount 3, logstart 1, i 3),
+old log /opt/log/sausage-store-backend.log.3.gz does not exist
+renaming /opt/log/sausage-store-backend.log.2.gz to /opt/log/sausage-store-backend.log.3.gz (rotatecount 3, logstart 1, i 2),
+old log /opt/log/sausage-store-backend.log.2.gz does not exist
+renaming /opt/log/sausage-store-backend.log.1.gz to /opt/log/sausage-store-backend.log.2.gz (rotatecount 3, logstart 1, i 1),
+old log /opt/log/sausage-store-backend.log.1.gz does not exist
+renaming /opt/log/sausage-store-backend.log.0.gz to /opt/log/sausage-store-backend.log.1.gz (rotatecount 3, logstart 1, i 0),
+old log /opt/log/sausage-store-backend.log.0.gz does not exist
+log /opt/log/sausage-store-backend.log.4.gz doesn't exist -- won't try to dispose of it
+running prerotate script
+renaming /opt/log/sausage-store-backend.log to /opt/log/sausage-store-backend.log.1
+creating new /opt/log/sausage-store-backend.log mode = 0744 uid = 1004 gid = 1005
+$ ls -lahi /opt/log
+total 1.3M
+128028 drwxr-xr-x+ 2 jarservice jarservice 4.0K Jul  5 05:58 .
+   508 drwxr-xr-x+ 4 root       root       4.0K Jul  5 04:41 ..
+128271 -rwxr--r--+ 1 jarservice jarservice    0 Jul  5 05:58 sausage-store-backend.log
+12801
