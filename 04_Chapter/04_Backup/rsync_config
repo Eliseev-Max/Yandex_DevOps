@@ -1,0 +1,25 @@
+rsync -azvh --dry-run user-backup@localhost:/home/jarservice/sausage-store.jar user-backup@10.129.0.41:/opt/backup/$(date +"%F-%H")
+
+production-server
+158.160.99.87
+10.128.0.36
+
+backup-server
+158.160.72.211
+10.129.0.41
+
+# https://linux.die.net/man/1/rsync
+# https://selectel.ru/blog/rsync-guide/
+# https://losst.pro/rsync-primery-sinhronizatsii
+
+pid file = /var/run/rsyncd.pid
+lock file = /var/run/rsync.lock
+log file = /var/log/rsync.log
+[share]
+path = /home/jarservice/
+hosts allow = localhost 10.129.0.41 158.160.72.211
+hosts deny = *
+list = true
+uid = user-backup
+gid = user-backup
+read only = false
