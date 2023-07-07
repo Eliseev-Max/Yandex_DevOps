@@ -232,3 +232,8 @@ https://habr.com/ru/companies/veeam/articles/193568/)
 #!/bin/bash
 cd /opt/backup/
 ls -1 -r | tail -n +31 | xargs rm -rf
+
+
+#!/bin/bash
+cd /opt/backup/
+ls -1 -r | tail -n +31 | xargs rm -rf

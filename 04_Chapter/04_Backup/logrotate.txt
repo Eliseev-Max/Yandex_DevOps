@@ -3,8 +3,8 @@
   - предназначена для автоматизации обработки журналов.
 
 { sources:
+  https://manpages.ubuntu.com/manpages/jammy/en/man8/logrotate.8.html
   https://www.opennet.ru/man.shtml?topic=logrotate&category=8&russian=0
-  https://manpages.ubuntu.com/manpages/focal/en/man8/logrotate.8.html
   https://www.8host.com/blog/upravlenie-logami-s-pomoshhyu-logrotate-v-ubuntu/
 
 }
