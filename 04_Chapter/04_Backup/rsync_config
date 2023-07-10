@@ -1,4 +1,5 @@
 rsync -azvh --dry-run /home/jarservice/sausage-store.jar user-backup@10.129.0.41:/opt/backup/$(date +"%F-%H")
+rsync -azvh /home/jarservice/sausage-store.jar user-backup@10.129.0.41:/opt/backup/$(date +"\%F-\%H-\%M")
 
 production-server
 158.160.99.87
